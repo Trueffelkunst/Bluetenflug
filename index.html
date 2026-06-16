@@ -277,7 +277,7 @@
   <div class="card">
     <h3 style="margin-top:0">📷 Probe einscannen & nachbewerten</h3>
     <div class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Für eine vollständige Nachkorrektur fotografierst du die Schulaufgabe und lädst sie im Chat hoch – ich prüfe jede Aufgabe nach dem offiziellen Bewertungsschema, vergebe die Note nach dem bayerischen Grundschul-Notenschlüssel und sage dir, ob die Note der Lehrkraft passt. Bei Hörtests finde ich meist die Transkription des Hörtextes. Unten der schnelle Punkterechner für die reine Notenkontrolle. Noten erscheinen nur hier im Eltern-Bereich.</div>
-    <input type="file" id="scanFiles" accept="image/*" multiple style="margin-bottom:8px">
+    <input type="file" id="scanFiles" accept="image/*,application/pdf" multiple style="margin-bottom:8px">
     <button class="btn" id="scanBtn">Mit KI nachbewerten</button>
     <div id="scanResult" style="margin-top:10px;white-space:pre-wrap;font-size:.9rem;line-height:1.4"></div>
     <div style="border-top:1px solid #efe6d4;margin:14px 0 8px"></div>
@@ -869,7 +869,7 @@ async function gradeScan(){const st=$("#scanResult");if(!st)return;const files=(
   if(!files||!files.length){st.style.color="var(--bad)";st.textContent="Bitte zuerst Foto(s) der Probe auswählen.";return;}
   st.style.color="var(--muted)";st.textContent="Werte die Probe aus … (das kann einen Moment dauern)";
   try{const content=[{type:"text",text:GRADE_PROMPT}];
-    for(const f of files){const data=await fileToData(f);const m=String(data).match(/^data:([^;]+);base64,(.*)$/);if(m)content.push({type:"image",source:{type:"base64",media_type:m[1],data:m[2]}});}
+    for(const f of files){const data=await fileToData(f);const m=String(data).match(/^data:([^;]+);base64,(.*)$/);if(!m)continue;if(m[1]==="application/pdf")content.push({type:"document",source:{type:"base64",media_type:"application/pdf",data:m[2]}});else content.push({type:"image",source:{type:"base64",media_type:m[1],data:m[2]}});}
     const out=await aiCall([{role:"user",content}],2200);st.style.color="var(--ink)";st.textContent=out;}
   catch(e){st.style.color="var(--bad)";st.textContent="Fehler: "+e.message;}}
 
