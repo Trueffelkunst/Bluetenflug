@@ -850,7 +850,7 @@ $("#gamequit").onclick=()=>{stopGame();GAME=null;show("home");renderHome();};
 const GRADE_PROMPT=`Du bist eine erfahrene Grundschullehrkraft in Bayern und korrigierst nach LehrplanPLUS. Auf den Fotos ist eine (eventuell schon von der Lehrkraft korrigierte) Schulaufgabe/Probe aus der Grundschule.
 
 Aufgaben:
-1. Lies alle Aufgabenstellungen und die Antworten des Kindes.
+1. Das Dokument kann mehrere Seiten oder Bilder umfassen – werte ausnahmslos ALLE Seiten/Bilder aus, nicht nur die erste. Lies alle Aufgabenstellungen und die Antworten des Kindes.
 2. Korrigiere jede Aufgabe sachlich korrekt nach dem offiziellen Bewertungsschema. Bei einem Hörtext: Der Hörtext ist nicht im Bild – weise kurz darauf hin und bewerte, was sichtbar ist.
 3. Wenn eine Punkteverteilung erkennbar ist, vergib Punkte und berechne die Gesamtnote nach dem bayerischen Grundschul-Notenschlüssel: Note 1 ab 96 %, 2 ab 80 %, 3 ab 60 %, 4 ab 45 %, 5 ab 16 %, sonst 6.
 4. Wenn eine Note oder Punktzahl der Lehrkraft sichtbar ist, vergleiche und sage, ob sie passt, zu mild oder zu streng ist.
