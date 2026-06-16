@@ -266,8 +266,22 @@
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0">🧮 Probe nachbewerten (ISB-Schlüssel)</h3>
-    <div class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Nur hier im Eltern-Bereich sichtbar. Trage die Punkte ein – die Note wird nach dem gängigen bayerischen Grundschul-Notenschlüssel berechnet, damit du die Bewertung der Lehrkraft prüfen kannst.</div>
+    <h3 style="margin-top:0">🔌 KI-Anbindung (fürs Einscannen)</h3>
+    <div class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Nur für dich: Mit einem eigenen API-Schlüssel von Anthropic wertet die App Fotos aus. Der Schlüssel bleibt auf diesem Gerät. Die Fotos gehen zur Auswertung an Anthropic; es können kleine Kosten entstehen.</div>
+    <div class="field"><label>API-Schlüssel</label><input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off"></div>
+    <div class="field"><label>Modell</label><select id="modelSel"><option value="claude-sonnet-4-6">Claude Sonnet 4.6 (empfohlen)</option><option value="claude-opus-4-8">Claude Opus 4.8 (gründlicher)</option></select></div>
+    <button class="btn secondary" id="saveKeyBtn">Speichern & Verbindung testen</button>
+    <div id="apiStatus" style="margin-top:8px;font-size:.9rem"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">📷 Probe einscannen & nachbewerten</h3>
+    <div class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Für eine vollständige Nachkorrektur fotografierst du die Schulaufgabe und lädst sie im Chat hoch – ich prüfe jede Aufgabe nach dem offiziellen Bewertungsschema, vergebe die Note nach dem bayerischen Grundschul-Notenschlüssel und sage dir, ob die Note der Lehrkraft passt. Bei Hörtests finde ich meist die Transkription des Hörtextes. Unten der schnelle Punkterechner für die reine Notenkontrolle. Noten erscheinen nur hier im Eltern-Bereich.</div>
+    <input type="file" id="scanFiles" accept="image/*" multiple style="margin-bottom:8px">
+    <button class="btn" id="scanBtn">Mit KI nachbewerten</button>
+    <div id="scanResult" style="margin-top:10px;white-space:pre-wrap;font-size:.9rem;line-height:1.4"></div>
+    <div style="border-top:1px solid #efe6d4;margin:14px 0 8px"></div>
+    <div style="font-weight:700;font-size:.9rem;margin-bottom:6px">Oder schnelle Notenkontrolle (nur Punkte):</div>
     <div class="field"><label>Erreichte Punkte</label><input type="number" id="pPoints" inputmode="decimal" step="0.5"></div>
     <div class="field"><label>Gesamtpunkte</label><input type="number" id="pMax" inputmode="decimal" step="0.5"></div>
     <div class="field"><label>Note der Lehrkraft (optional)</label><input type="number" id="pTeacher" inputmode="numeric" min="1" max="6"></div>
@@ -437,11 +451,32 @@ const ENG={
   body:[{en:"hand",de:"Hand",emoji:"✋"},{en:"foot",de:"Fuß",emoji:"🦶"},{en:"eye",de:"Auge",emoji:"👁️"},{en:"ear",de:"Ohr",emoji:"👂"},{en:"nose",de:"Nase",emoji:"👃"},{en:"mouth",de:"Mund",emoji:"👄"},{en:"mother",de:"Mutter",emoji:"👩"},{en:"father",de:"Vater",emoji:"👨"},{en:"baby",de:"Baby",emoji:"👶"}],
   school:[{en:"book",de:"Buch",emoji:"📖"},{en:"pen",de:"Stift",emoji:"🖊️"},{en:"pencil",de:"Bleistift",emoji:"✏️"},{en:"bag",de:"Tasche",emoji:"🎒"},{en:"chair",de:"Stuhl",emoji:"🪑"},{en:"hello",de:"hallo",emoji:"👋"},{en:"thank you",de:"danke",emoji:"🙏"},{en:"please",de:"bitte",emoji:"🙂"}]
 };
-function engMake(list){return function(){const it=pick(list);const others=sample(list.filter(x=>x.en!==it.en),2);const r=Math.random();
-  if(r<0.34){const o=shuffle([it,...others]);return{type:"mc",q:`Wie heißt das auf Englisch?  ${it.emoji} (${it.de})`,o:o.map(x=>x.en),c:o.findIndex(x=>x.en===it.en)};}
-  if(r<0.67){const o=shuffle([it,...others]);return{type:"mc",q:`Was bedeutet „${it.en}"?`,o:o.map(x=>x.de),c:o.findIndex(x=>x.de===it.de)};}
-  const o=shuffle([it,...others]);return{type:"listen",say:it.en,q:"Hör gut zu – welches Wort hörst du?",o:o.map(x=>`${x.emoji} ${x.de}`),c:o.findIndex(x=>x.en===it.en)};};}
-function speak(t){try{const u=new SpeechSynthesisUtterance(t);u.lang="en-US";u.rate=.85;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}catch(e){}}
+function engMake(list,opt){opt=opt||{};return function(){const it=pick(list);const others=sample(list.filter(x=>x.en!==it.en&&x.de!==it.de),2);const pool=[it,...others];
+  if(!opt.phrase&&pool.length>=3&&Math.random()<0.34){const o=shuffle(pool);const cue=it.emoji?`${it.emoji} (${it.de})`:`„${it.de}"`;return{type:"mc",q:`Wie heißt das auf Englisch?  ${cue}`,o:o.map(x=>x.en),c:o.findIndex(x=>x.en===it.en)};}
+  if(Math.random()<0.5){const o=shuffle(pool);return{type:"mc",q:`Was bedeutet „${it.en}"?`,o:o.map(x=>x.de),c:o.findIndex(x=>x.de===it.de)};}
+  const o=shuffle(pool);const opts=o.map(x=>x.emoji?`${x.emoji} ${x.de}`:x.de);return{type:"listen",say:it.en,q:opt.phrase?"Hör gut zu – was bedeutet der Satz?":"Hör gut zu – was bedeutet das?",o:opts,c:o.findIndex(x=>x.en===it.en)};};}
+function speak(t){try{const u=new SpeechSynthesisUtterance(t);u.lang="en-GB";u.rate=.85;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}catch(e){}}
+const compose=(...ls)=>{const seen=new Set();const out=[];ls.flat().forEach(it=>{const a=it.en.toLowerCase(),b=it.de.toLowerCase();if(seen.has(a)||seen.has(b))return;seen.add(a);seen.add(b);out.push(it);});return out;};
+const ENGX={
+  greet:[{en:"hello",de:"hallo",emoji:"👋"},{en:"goodbye",de:"auf Wiedersehen",emoji:"👋"},{en:"please",de:"bitte",emoji:"🙏"},{en:"thank you",de:"danke",emoji:"🙏"},{en:"sorry",de:"Entschuldigung"},{en:"yes",de:"ja",emoji:"✅"},{en:"no",de:"nein",emoji:"❌"},{en:"good morning",de:"guten Morgen",emoji:"🌅"},{en:"welcome",de:"willkommen"},{en:"fine",de:"gut"}],
+  school:[{en:"school",de:"Schule",emoji:"🏫"},{en:"schoolbag",de:"Schultasche",emoji:"🎒"},{en:"teacher",de:"Lehrerin",emoji:"👩‍🏫"},{en:"book",de:"Buch",emoji:"📖"},{en:"pen",de:"Stift",emoji:"🖊️"},{en:"pencil",de:"Bleistift",emoji:"✏️"},{en:"rubber",de:"Radiergummi"},{en:"ruler",de:"Lineal",emoji:"📏"},{en:"board",de:"Tafel",emoji:"🟩"},{en:"chair",de:"Stuhl",emoji:"🪑"},{en:"picture",de:"Bild",emoji:"🖼️"},{en:"classroom",de:"Klassenzimmer"}],
+  feelings:[{en:"happy",de:"glücklich",emoji:"😊"},{en:"sad",de:"traurig",emoji:"😢"},{en:"tired",de:"müde",emoji:"😴"},{en:"hungry",de:"hungrig",emoji:"😋"},{en:"thirsty",de:"durstig",emoji:"🥤"},{en:"hot",de:"heiß",emoji:"🥵"},{en:"cold",de:"kalt",emoji:"🥶"},{en:"angry",de:"wütend",emoji:"😠"}],
+  time:[{en:"time",de:"Zeit",emoji:"⏰"},{en:"o'clock",de:"Uhr"},{en:"weekend",de:"Wochenende"},{en:"Monday",de:"Montag"},{en:"Tuesday",de:"Dienstag"},{en:"Wednesday",de:"Mittwoch"},{en:"Thursday",de:"Donnerstag"},{en:"Friday",de:"Freitag"},{en:"Saturday",de:"Samstag"},{en:"Sunday",de:"Sonntag"}],
+  family:[{en:"family",de:"Familie",emoji:"👨‍👩‍👧‍👦"},{en:"mother",de:"Mutter",emoji:"👩"},{en:"father",de:"Vater",emoji:"👨"},{en:"sister",de:"Schwester",emoji:"👧"},{en:"brother",de:"Bruder",emoji:"👦"},{en:"grandma",de:"Oma",emoji:"👵"},{en:"grandpa",de:"Opa",emoji:"👴"},{en:"baby",de:"Baby",emoji:"👶"},{en:"friend",de:"Freund",emoji:"🧑‍🤝‍🧑"},{en:"boy",de:"Junge"},{en:"girl",de:"Mädchen"}],
+  animals:[{en:"dog",de:"Hund",emoji:"🐶"},{en:"cat",de:"Katze",emoji:"🐱"},{en:"mouse",de:"Maus",emoji:"🐭"},{en:"hamster",de:"Hamster",emoji:"🐹"},{en:"rabbit",de:"Kaninchen",emoji:"🐰"},{en:"horse",de:"Pferd",emoji:"🐴"},{en:"fish",de:"Fisch",emoji:"🐟"},{en:"bird",de:"Vogel",emoji:"🐦"},{en:"chicken",de:"Huhn",emoji:"🐔"},{en:"cow",de:"Kuh",emoji:"🐮"},{en:"pig",de:"Schwein",emoji:"🐷"},{en:"sheep",de:"Schaf",emoji:"🐑"},{en:"pet",de:"Haustier",emoji:"🐾"}],
+  numbers:[{en:"one",de:"eins",emoji:"1️⃣"},{en:"two",de:"zwei",emoji:"2️⃣"},{en:"three",de:"drei",emoji:"3️⃣"},{en:"four",de:"vier",emoji:"4️⃣"},{en:"five",de:"fünf",emoji:"5️⃣"},{en:"six",de:"sechs",emoji:"6️⃣"},{en:"seven",de:"sieben",emoji:"7️⃣"},{en:"eight",de:"acht",emoji:"8️⃣"},{en:"nine",de:"neun",emoji:"9️⃣"},{en:"ten",de:"zehn",emoji:"🔟"},{en:"eleven",de:"elf"},{en:"twelve",de:"zwölf"},{en:"fifteen",de:"fünfzehn"},{en:"twenty",de:"zwanzig"},{en:"thirty",de:"dreißig"}],
+  colours:[{en:"red",de:"rot",emoji:"🟥"},{en:"blue",de:"blau",emoji:"🟦"},{en:"yellow",de:"gelb",emoji:"🟨"},{en:"green",de:"grün",emoji:"🟩"},{en:"black",de:"schwarz",emoji:"⬛"},{en:"white",de:"weiß",emoji:"⬜"},{en:"orange",de:"orange",emoji:"🟧"},{en:"brown",de:"braun",emoji:"🟫"},{en:"pink",de:"rosa",emoji:"🌸"},{en:"purple",de:"lila",emoji:"🟪"},{en:"grey",de:"grau"}],
+  food:[{en:"bread",de:"Brot",emoji:"🍞"},{en:"butter",de:"Butter",emoji:"🧈"},{en:"cheese",de:"Käse",emoji:"🧀"},{en:"ham",de:"Schinken",emoji:"🍖"},{en:"egg",de:"Ei",emoji:"🥚"},{en:"apple",de:"Apfel",emoji:"🍎"},{en:"banana",de:"Banane",emoji:"🍌"},{en:"strawberry",de:"Erdbeere",emoji:"🍓"},{en:"tomato",de:"Tomate",emoji:"🍅"},{en:"salad",de:"Salat",emoji:"🥗"},{en:"chips",de:"Pommes",emoji:"🍟"},{en:"chocolate",de:"Schokolade",emoji:"🍫"},{en:"sweets",de:"Süßigkeiten",emoji:"🍬"},{en:"fruit",de:"Obst",emoji:"🍇"},{en:"water",de:"Wasser",emoji:"💧"},{en:"milk",de:"Milch",emoji:"🥛"},{en:"tea",de:"Tee",emoji:"🍵"},{en:"cake",de:"Kuchen",emoji:"🍰"},{en:"ice cream",de:"Eis",emoji:"🍦"},{en:"pizza",de:"Pizza",emoji:"🍕"}],
+  clothes:[{en:"dress",de:"Kleid",emoji:"👗"},{en:"shirt",de:"Hemd",emoji:"👕"},{en:"shoes",de:"Schuhe",emoji:"👟"},{en:"jeans",de:"Jeans",emoji:"👖"},{en:"pullover",de:"Pullover",emoji:"🧥"},{en:"hat",de:"Hut",emoji:"🎩"},{en:"socks",de:"Socken",emoji:"🧦"}],
+  shopping:[{en:"money",de:"Geld",emoji:"💰"},{en:"shop",de:"Geschäft",emoji:"🏬"},{en:"euro",de:"Euro",emoji:"💶"},{en:"pound",de:"Pfund",emoji:"💷"},{en:"dollar",de:"Dollar",emoji:"💵"},{en:"big",de:"groß"},{en:"small",de:"klein"},{en:"many",de:"viele"},{en:"little",de:"wenig"},{en:"take",de:"nehmen"},{en:"give",de:"geben"}],
+  hobbies:[{en:"football",de:"Fußball",emoji:"⚽"},{en:"tennis",de:"Tennis",emoji:"🎾"},{en:"bike",de:"Fahrrad",emoji:"🚲"},{en:"swim",de:"schwimmen",emoji:"🏊"},{en:"dance",de:"tanzen",emoji:"💃"},{en:"sing",de:"singen",emoji:"🎤"},{en:"read",de:"lesen",emoji:"📚"},{en:"paint",de:"malen",emoji:"🎨"},{en:"play",de:"spielen",emoji:"🎮"},{en:"sport",de:"Sport",emoji:"🏅"},{en:"hobby",de:"Hobby",emoji:"🎯"},{en:"run",de:"rennen",emoji:"🏃"}],
+  festivals:[{en:"birthday",de:"Geburtstag",emoji:"🎂"},{en:"party",de:"Party",emoji:"🎉"},{en:"Christmas",de:"Weihnachten",emoji:"🎄"},{en:"Halloween",de:"Halloween",emoji:"🎃"},{en:"Easter",de:"Ostern",emoji:"🐣"},{en:"present",de:"Geschenk",emoji:"🎁"}],
+  verbs:[{en:"go",de:"gehen"},{en:"come",de:"kommen"},{en:"eat",de:"essen",emoji:"🍽️"},{en:"drink",de:"trinken",emoji:"🥤"},{en:"help",de:"helfen"},{en:"like",de:"mögen",emoji:"❤️"},{en:"have",de:"haben"},{en:"can",de:"können"},{en:"jump",de:"springen",emoji:"🦘"},{en:"look",de:"schauen",emoji:"👀"},{en:"listen",de:"zuhören",emoji:"👂"}],
+  prepos:[{en:"in",de:"in"},{en:"on",de:"auf"},{en:"under",de:"unter"},{en:"behind",de:"hinter"},{en:"next to",de:"neben"},{en:"here",de:"hier"},{en:"there",de:"dort"},{en:"house",de:"Haus",emoji:"🏠"},{en:"room",de:"Zimmer",emoji:"🚪"},{en:"garden",de:"Garten",emoji:"🌳"},{en:"town",de:"Stadt",emoji:"🏘️"},{en:"park",de:"Park",emoji:"🏞️"}],
+  adjectives:[{en:"old",de:"alt"},{en:"new",de:"neu"},{en:"nice",de:"nett"},{en:"funny",de:"lustig",emoji:"😄"},{en:"fast",de:"schnell",emoji:"🏃"},{en:"good",de:"gut"},{en:"great",de:"toll"}],
+  body:[{en:"hand",de:"Hand",emoji:"✋"},{en:"foot",de:"Fuß",emoji:"🦶"},{en:"eye",de:"Auge",emoji:"👁️"},{en:"ear",de:"Ohr",emoji:"👂"},{en:"nose",de:"Nase",emoji:"👃"},{en:"mouth",de:"Mund",emoji:"👄"},{en:"head",de:"Kopf"},{en:"hair",de:"Haare",emoji:"💇"},{en:"arm",de:"Arm",emoji:"💪"},{en:"leg",de:"Bein",emoji:"🦵"}],
+  phrases:[{en:"How are you?",de:"Wie geht es dir?"},{en:"I'm fine, thank you.",de:"Mir geht es gut, danke."},{en:"What's your name?",de:"Wie heißt du?"},{en:"My name is Tom.",de:"Ich heiße Tom."},{en:"How old are you?",de:"Wie alt bist du?"},{en:"I'm nine years old.",de:"Ich bin neun Jahre alt."},{en:"Where are you from?",de:"Woher kommst du?"},{en:"I'm from Germany.",de:"Ich komme aus Deutschland."},{en:"What's the time?",de:"Wie spät ist es?"},{en:"It's three o'clock.",de:"Es ist drei Uhr."},{en:"Have you got a pet?",de:"Hast du ein Haustier?"},{en:"I've got a dog.",de:"Ich habe einen Hund."},{en:"Do you like chocolate?",de:"Magst du Schokolade?"},{en:"I like apples.",de:"Ich mag Äpfel."},{en:"I don't like cheese.",de:"Ich mag keinen Käse."},{en:"Can I have an apple, please?",de:"Kann ich bitte einen Apfel haben?"},{en:"How much is it?",de:"Wie viel kostet das?"},{en:"Here you are.",de:"Bitte schön."},{en:"Happy birthday!",de:"Alles Gute zum Geburtstag!"},{en:"Merry Christmas!",de:"Frohe Weihnachten!"},{en:"I can swim.",de:"Ich kann schwimmen."},{en:"Where is the cat?",de:"Wo ist die Katze?"}]
+};
 
 /* ---------- Skill-Register (Mikro-Lernziele) ----------
    rate: Probenwahrscheinlichkeit 3=fast immer, 2=häufig, 1=gelegentlich  */
@@ -464,11 +499,13 @@ const TOPICS={
   h_natur:{sub:"hsu",name:"Tiere & Wald"},
   h_feuer:{sub:"hsu",name:"Feuer"},
   h_werte:{sub:"hsu",name:"Werte & Zusammenleben"},
-  e_basics:{sub:"englisch",name:"Farben & Zahlen"},
-  e_animals:{sub:"englisch",name:"Tiere"},
-  e_food:{sub:"englisch",name:"Essen & Trinken"},
-  e_body:{sub:"englisch",name:"Körper & Familie"},
-  e_school:{sub:"englisch",name:"Schule & Begrüßung"}
+  e_school:{sub:"englisch",name:"Schule & Begrüßung"},
+  e_family:{sub:"englisch",name:"Familie, Freunde & Tiere"},
+  e_numcol:{sub:"englisch",name:"Zahlen & Farben"},
+  e_shop:{sub:"englisch",name:"Essen, Kleidung & Einkaufen"},
+  e_free:{sub:"englisch",name:"Freizeit & Feste"},
+  e_words:{sub:"englisch",name:"Wörter, Körper & Orte"},
+  e_phr:{sub:"englisch",name:"Sätze & Fragen"}
 };
 const SKILLS=[
   // Mathe
@@ -503,13 +540,14 @@ const SKILLS=[
   {id:"natur",t:"h_natur",name:"Tiere & Wald",g:[3,4],rate:2,gen:G.hsuNatur},
   {id:"feuer",t:"h_feuer",name:"Feuer",g:[3,4],rate:2,gen:G.hsuFeuer},
   {id:"werte",t:"h_werte",name:"Werte",g:[3,4],rate:1,gen:G.hsuWerte},
-  // Englisch (Kür)
-  {id:"e_col",t:"e_basics",name:"Farben",g:[3,4],rate:1,gen:engMake(ENG.colours)},
-  {id:"e_num",t:"e_basics",name:"Zahlen",g:[3,4],rate:1,gen:engMake(ENG.numbers)},
-  {id:"e_ani",t:"e_animals",name:"Tiere",g:[3,4],rate:1,gen:engMake(ENG.animals)},
-  {id:"e_foo",t:"e_food",name:"Essen & Trinken",g:[3,4],rate:1,gen:engMake(ENG.food)},
-  {id:"e_bod",t:"e_body",name:"Körper & Familie",g:[3,4],rate:1,gen:engMake(ENG.body)},
-  {id:"e_sch",t:"e_school",name:"Schule & Begrüßung",g:[3,4],rate:1,gen:engMake(ENG.school)}
+  // Englisch (Kür) – voller Umfang bis Ende Klasse 4 (LehrplanPLUS)
+  {id:"e_sch",t:"e_school",name:"Schule & Begrüßung",g:[3,4],rate:1,gen:engMake(compose(ENGX.greet,ENGX.school,ENGX.feelings,ENGX.time))},
+  {id:"e_fam",t:"e_family",name:"Familie & Tiere",g:[3,4],rate:1,gen:engMake(compose(ENGX.family,ENGX.animals))},
+  {id:"e_ncol",t:"e_numcol",name:"Zahlen & Farben",g:[3,4],rate:1,gen:engMake(compose(ENGX.numbers,ENGX.colours))},
+  {id:"e_shop",t:"e_shop",name:"Essen & Einkaufen",g:[3,4],rate:1,gen:engMake(compose(ENGX.food,ENGX.clothes,ENGX.shopping))},
+  {id:"e_free",t:"e_free",name:"Freizeit & Feste",g:[3,4],rate:1,gen:engMake(compose(ENGX.hobbies,ENGX.festivals,ENGX.verbs))},
+  {id:"e_word",t:"e_words",name:"Wörter & Körper",g:[3,4],rate:1,gen:engMake(compose(ENGX.prepos,ENGX.adjectives,ENGX.body))},
+  {id:"e_phr",t:"e_phr",name:"Sätze & Fragen",g:[3,4],rate:1,gen:engMake(ENGX.phrases,{phrase:true})}
 ];
 const SKILL=Object.fromEntries(SKILLS.map(s=>[s.id,s]));
 function topicsOf(sub){return Object.entries(TOPICS).filter(([id,t])=>t.sub===sub).map(([id])=>id);}
@@ -529,11 +567,11 @@ function daysUntil(s){return Math.round((pdate(s)-pdate(today()))/86400000);}
 function defState(){
   const sk={};SKILLS.forEach(s=>sk[s.id]={box:0,due:today(),seen:0,correct:0});
   const owed={},last={};["mathe","deutsch","hsu"].forEach(s=>{owed[s]=0;last[s]="";});
-  return{sk,owed,last,gen:"",grade:3,probe:null,gaps:[],placed:false,games:true,gameDay:"",created:today()};
+  return{sk,owed,last,gen:"",grade:3,probe:null,gaps:[],placed:false,games:true,gameDay:"",apiKey:"",model:"claude-sonnet-4-6",created:today()};
 }
 function load(){try{const r=localStorage.getItem(KEY);if(!r)return defState();const s=JSON.parse(r);
   SKILLS.forEach(k=>{if(!s.sk[k.id])s.sk[k.id]={box:0,due:today(),seen:0,correct:0};});
-  if(s.grade==null)s.grade=3;if(!s.gaps)s.gaps=[];if(s.placed==null)s.placed=false;if(s.games==null)s.games=true;if(s.gameDay==null)s.gameDay="";return s;}catch(e){return defState();}}
+  if(s.grade==null)s.grade=3;if(!s.gaps)s.gaps=[];if(s.placed==null)s.placed=false;if(s.games==null)s.games=true;if(s.gameDay==null)s.gameDay="";if(s.apiKey==null)s.apiKey="";if(!s.model)s.model="claude-sonnet-4-6";return s;}catch(e){return defState();}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e){}}
 
 function rollover(){
@@ -753,6 +791,9 @@ function renderEltern(){
   $("#gradesel").value=STATE.grade;
   $("#gradesel").onchange=e=>{STATE.grade=Number(e.target.value);save();};
   const gt2=$("#gamesToggle");if(gt2){gt2.checked=STATE.games!==false;gt2.onchange=e=>{STATE.games=e.target.checked;save();};}
+  const ak=$("#apiKey");if(ak)ak.value=STATE.apiKey||"";const ms=$("#modelSel");if(ms)ms.value=STATE.model||"claude-sonnet-4-6";
+  const sk=$("#saveKeyBtn");if(sk)sk.onclick=()=>{STATE.apiKey=($("#apiKey").value||"").trim();STATE.model=$("#modelSel").value;save();testApi();};
+  const scb=$("#scanBtn");if(scb)scb.onclick=()=>gradeScan();
   // Probe-Formular
   const ps=$("#probesub");ps.value=STATE.probe?STATE.probe.sub:"";
   $("#probedate").value=STATE.probe?STATE.probe.date:"";
@@ -804,6 +845,33 @@ function spawnFlower(){if(!GAME)return;const a=$("#gamearea");const w=a.clientWi
 function stopGame(){if(GAME){clearInterval(GAME.timer);clearInterval(GAME.spawn);}}
 function endGame(){stopGame();STATE.gameDay=today();save();const a=$("#gamearea");a.innerHTML=`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px"><div style="font-size:1.3rem;font-weight:800">Toll gemacht! 🐝</div><div style="margin:8px 0;color:var(--muted)">Du hast ${GAME.score} Tropfen Honig gefangen.</div><button class="btn" id="gameback" style="max-width:240px">Zurück</button></div>`;$("#gameback").onclick=()=>{GAME=null;show("home");renderHome();};}
 $("#gamequit").onclick=()=>{stopGame();GAME=null;show("home");renderHome();};
+
+/* ---------- KI-Anbindung (optional, eigener Anthropic-Schlüssel) ---------- */
+const GRADE_PROMPT=`Du bist eine erfahrene Grundschullehrkraft in Bayern und korrigierst nach LehrplanPLUS. Auf den Fotos ist eine (eventuell schon von der Lehrkraft korrigierte) Schulaufgabe/Probe aus der Grundschule.
+
+Aufgaben:
+1. Lies alle Aufgabenstellungen und die Antworten des Kindes.
+2. Korrigiere jede Aufgabe sachlich korrekt nach dem offiziellen Bewertungsschema. Bei einem Hörtext: Der Hörtext ist nicht im Bild – weise kurz darauf hin und bewerte, was sichtbar ist.
+3. Wenn eine Punkteverteilung erkennbar ist, vergib Punkte und berechne die Gesamtnote nach dem bayerischen Grundschul-Notenschlüssel: Note 1 ab 96 %, 2 ab 80 %, 3 ab 60 %, 4 ab 45 %, 5 ab 16 %, sonst 6.
+4. Wenn eine Note oder Punktzahl der Lehrkraft sichtbar ist, vergleiche und sage, ob sie passt, zu mild oder zu streng ist.
+5. Antworte auf Deutsch und übersichtlich: zuerst eine kurze Aufgaben-Übersicht (Nummer: richtig/falsch + knappe Begründung), dann eine Zeile "Gesamt: X von Y Punkten = Z % → Note N", dann ein Satz zum Vergleich mit der Lehrkraft-Note. Sei gründlich, fair und freundlich im Ton.`;
+async function aiCall(messages,maxTokens){
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":STATE.apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true","content-type":"application/json"},body:JSON.stringify({model:STATE.model||"claude-sonnet-4-6",max_tokens:maxTokens||1800,messages})});
+  if(!r.ok){let t="";try{t=await r.text();}catch(e){}throw new Error("API "+r.status+" – "+t.slice(0,240));}
+  const d=await r.json();return (d.content&&d.content[0]&&d.content[0].text)||"(keine Antwort)";
+}
+function fileToData(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>rej(new Error("Datei konnte nicht gelesen werden"));fr.readAsDataURL(file);});}
+async function testApi(){const st=$("#apiStatus");if(!st)return;if(!STATE.apiKey){st.style.color="var(--bad)";st.textContent="Bitte zuerst einen Schlüssel eintragen.";return;}st.style.color="var(--muted)";st.textContent="Teste Verbindung …";
+  try{const t=await aiCall([{role:"user",content:[{type:"text",text:"Antworte nur mit dem Wort: OK"}]}],20);st.style.color="var(--good)";st.textContent="✅ Verbindung funktioniert ("+t.trim()+").";}
+  catch(e){st.style.color="var(--bad)";st.textContent="❌ "+e.message;}}
+async function gradeScan(){const st=$("#scanResult");if(!st)return;const files=($("#scanFiles")||{}).files;
+  if(!STATE.apiKey){st.style.color="var(--bad)";st.textContent="Bitte zuerst oben einen API-Schlüssel eintragen und testen.";return;}
+  if(!files||!files.length){st.style.color="var(--bad)";st.textContent="Bitte zuerst Foto(s) der Probe auswählen.";return;}
+  st.style.color="var(--muted)";st.textContent="Werte die Probe aus … (das kann einen Moment dauern)";
+  try{const content=[{type:"text",text:GRADE_PROMPT}];
+    for(const f of files){const data=await fileToData(f);const m=String(data).match(/^data:([^;]+);base64,(.*)$/);if(m)content.push({type:"image",source:{type:"base64",media_type:m[1],data:m[2]}});}
+    const out=await aiCall([{role:"user",content}],2200);st.style.color="var(--ink)";st.textContent=out;}
+  catch(e){st.style.color="var(--bad)";st.textContent="Fehler: "+e.message;}}
 
 /* ---------- PWA-Manifest ---------- */
 (function(){const m={name:"Sephis Blütenflug",short_name:"Blütenflug",display:"standalone",background_color:"#fff7e0",theme_color:"#f6c343",start_url:".",
