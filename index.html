@@ -233,6 +233,12 @@
   <header class="app"><div><h1 style="font-size:1.3rem">Eltern-Bereich</h1><div class="sub">Steuerung des Lernplans</div></div></header>
 
   <div class="card">
+    <h3 style="margin-top:0">📊 Lernstand (Schnupperflug)</h3>
+    <div class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:8px">So hat Josepha bisher abgeschnitten – aus der Lernstandserhebung und dem täglichen Üben. Themen, die in der Schule noch nicht dran waren, erscheinen normalerweise als „noch üben".</div>
+    <div id="lernstand"></div>
+  </div>
+
+  <div class="card">
     <h3 style="margin-top:0">Jahrgangsstufe</h3>
     <div class="field"><select id="gradesel"><option value="3">3. Klasse</option><option value="4">4. Klasse</option></select></div>
     <div class="sub" style="color:var(--muted);font-size:.85rem">Bestimmt, welche Themen geübt werden. Für den Übergang einfach auf 4 stellen.</div>
@@ -387,9 +393,9 @@ const G={
   schriftAdd(g){const m=g>=4?[1000,89999]:[100,799];const a=R(...m),b=R(...m);return{type:"input",q:`${a} + ${b} = ?`,a:[String(a+b)]};},
   schriftSub(g){const m=g>=4?[10000,99999]:[300,999];let a=R(...m),b=R(m[0]/3|0,a-1);return{type:"input",q:`${a} − ${b} = ?`,a:[String(a-b)]};},
   schriftMult(g){const a=R(102,989),b=R(2,9);return{type:"input",q:`${a} · ${b} = ?`,a:[String(a*b)]};},
-  schriftDiv(g){const d=R(2,9),q=R(21,callmax(g)),rest=R(0,d-1);const dd=d*q+rest;const ans=rest?`${q} R ${rest}`:`${q}`;const acc=rest?[`${q}R${rest}`,`${q}rest${rest}`]:[`${q}`];return{type:"input",q:`${dd} : ${d} = ?  (mit Rest)`,a:acc,sol:ans};},
+  schriftDiv(g){const d=R(3,9),q=R(21,callmax(g)),rest=R(1,d-1);const dd=d*q+rest;const ans=`${q} R ${rest}`;const acc=[`${q}R${rest}`,`${q}rest${rest}`];return{type:"input",q:`${dd} : ${d} = ?  (mit Rest)`,a:acc,sol:ans};},
   stellenwert(g){if(g>=4){const t=R(1,9),h=R(0,9),z=R(0,9),e=R(0,9);return{type:"input",q:`${t} T  ${h} H  ${z} Z  ${e} E = ?`,a:[String(t*1000+h*100+z*10+e)]};}const h=R(1,9),z=R(0,9),e=R(0,9);return{type:"input",q:`${h} H  ${z} Z  ${e} E = ?`,a:[String(h*100+z*10+e)]};},
-  ordnen(g){const m=g>=4?100000:1000;const n=sample([R(0,m),R(0,m),R(0,m),R(0,m)],4);const max=Math.max(...n);return{type:"mc",q:"Welche Zahl ist am größten?",o:n.map(String),c:n.indexOf(max)};},
+  ordnen(g){const m=g>=4?100000:1000;const set=new Set();while(set.size<4)set.add(R(0,m));const n=shuffle([...set]);const max=Math.max(...n);return{type:"mc",q:"Welche Zahl ist am größten?",o:n.map(String),c:n.indexOf(max)};},
   runden(g){const n=R(1230,98760);const st=pick(g>=4?[100,1000]:[10,100]);const r=Math.round(n/st)*st;return{type:"input",q:`Runde ${n} auf ${st===10?"Zehner":st===100?"Hunderter":"Tausender"}.`,a:[String(r)]};},
   folge(g){const st=pick(g>=4?[25,50,100,250]:[2,5,10,25]);const a=R(1,9)*st;const arr=[a,a+st,a+2*st,a+3*st];return{type:"input",q:`Wie geht es weiter?  ${arr.join(", ")}, ___`,a:[String(a+4*st)]};},
   groessen(g){const cs=[["km","m",1000],["m","cm",100],["kg","g",1000],["l","ml",1000],["h","min",60],["€","ct",100]];const c=pick(cs);const x=R(2,9);return{type:"input",q:`${x} ${c[0]} = ? ${c[1]}`,a:[String(x*c[2])]};},
@@ -403,7 +409,7 @@ const G={
     {type:"tf",q:"Ein Quadrat hat vier gleich lange Seiten.",a:true},
     {type:"mc",q:"Wie viele Spiegelachsen hat ein Quadrat?",o:["4","2","1"],c:0}
   ]);},
-  datenMC(g){const a=R(10,30),b=R(10,30),c=R(10,30);const mx=Math.max(a,b,c);const names=["Montag","Dienstag","Mittwoch"];return{type:"mc",q:`Verkaufte Eis: Mo ${a}, Di ${b}, Mi ${c}. An welchem Tag wurde am meisten verkauft?`,o:names,c:[a,b,c].indexOf(mx)};},
+  datenMC(g){let a,b,c;do{a=R(10,40);b=R(10,40);c=R(10,40);}while(a===b||b===c||a===c);const mx=Math.max(a,b,c);const names=["Montag","Dienstag","Mittwoch"];return{type:"mc",q:`Verkaufte Eis: Mo ${a}, Di ${b}, Mi ${c}. An welchem Tag wurde am meisten verkauft?`,o:names,c:[a,b,c].indexOf(mx)};},
   // DEUTSCH
   wortart(g){const r=Math.random();let w,c;if(r<.34){w=pick(NOMEN);c=0;}else if(r<.67){w=pick(VERBEN);c=1;}else{w=pick(ADJEKTIVE);c=2;}return{type:"mc",q:`Welche Wortart ist „${w}“?`,o:["Nomen","Verb","Adjektiv"],c};},
   zeit(g){const v=pick(VERBFORMEN);if(g>=4&&Math.random()<.4)return{type:"input",q:`Setze in die Zukunft: Morgen ___ er. (${v.i})`,a:[norm(v.fu),v.fu.toLowerCase()]};return{type:"input",q:`Setze in die Mitvergangenheit: Gestern ___ er. (${v.i})`,a:[v.pr.toLowerCase(),norm(v.pr)]};},
@@ -411,10 +417,10 @@ const G={
   faelle(g){const f=pick(FAELLE);return{type:"mc",q:`„${f.s}“ — In welchem Fall steht „${f.w}“?`,o:["Nominativ","Genitiv","Dativ","Akkusativ"],c:["Nominativ","Genitiv","Dativ","Akkusativ"].indexOf(f.f)};},
   woertlich(g){const w=pick(WOERTLICHE);const o=shuffle([w.ok,w.no]);return{type:"mc",q:"Welcher Satz hat die wörtliche Rede richtig?",o,c:o.indexOf(w.ok)};},
   steigern(g){const a=pick(STEIGER);if(Math.random()<.5)return{type:"input",q:`Steigere: ${a.p} — ___ (Mehrstufe)`,a:[a.k]};return{type:"input",q:`Steigere: ${a.p} — ${a.k} — ___ (Meiststufe)`,a:[a.s,a.s.replace("am ","")]};},
-  wortfamilie(g){const f=pick(WORTFAMILIE);const o=shuffle([pick(f.ja),pick(f.nein),pick(f.nein)]);const right=o.find(x=>f.ja.includes(x));return{type:"mc",q:`Welches Wort gehört zur Wortfamilie „${f.f}“?`,o,c:o.indexOf(right)};},
+  wortfamilie(g){const f=pick(WORTFAMILIE);const two=sample(f.nein,2);const o=shuffle([pick(f.ja),...two]);const right=o.find(x=>f.ja.includes(x));return{type:"mc",q:`Welches Wort gehört zur Wortfamilie „${f.f}“?`,o,c:o.indexOf(right)};},
   recht(g){const p=pick(RECHT);const o=shuffle([p[0],p[1]]);return{type:"mc",q:"Wie schreibt man richtig?",o,c:o.indexOf(p[0])};},
   abc(g){const w=sample(GRUNDWORT,3);const first=w.slice().sort((a,b)=>a.localeCompare(b,"de"))[0];return{type:"mc",q:"Welches Wort steht im Wörterbuch zuerst (alphabetisch)?",o:w,c:w.indexOf(first)};},
-  grossklein(g){const o=shuffle([pick(NOMEN),pick(VERBEN),pick(ADJEKTIVE)]);const right=o.find(x=>NOMEN.includes(x));return{type:"mc",q:"Welches Wort schreibt man groß (Nomen)?",o,c:o.indexOf(right)};},
+  grossklein(g){const n=pick(NOMEN).toLowerCase();const o=shuffle([n,pick(VERBEN),pick(ADJEKTIVE)]);return{type:"mc",q:"Welches Wort ist ein Nomen (wird großgeschrieben)?",o,c:o.indexOf(n)};},
   // HSU
   hsuNatur(){return pick(HSU_NATUR);},
   hsuFeuer(){return pick(HSU_FEUER);},
@@ -422,12 +428,28 @@ const G={
 };
 function callmax(g){return g>=4?900:90;}
 
+/* ---------- Englisch (Kür): Wortschatz nach LehrplanPLUS Grundschule ---------- */
+const ENG={
+  colours:[{en:"red",de:"rot",emoji:"🟥"},{en:"blue",de:"blau",emoji:"🟦"},{en:"green",de:"grün",emoji:"🟩"},{en:"yellow",de:"gelb",emoji:"🟨"},{en:"black",de:"schwarz",emoji:"⬛"},{en:"white",de:"weiß",emoji:"⬜"},{en:"orange",de:"orange",emoji:"🟧"},{en:"pink",de:"rosa",emoji:"🌸"},{en:"brown",de:"braun",emoji:"🟫"},{en:"purple",de:"lila",emoji:"🟪"}],
+  numbers:[{en:"one",de:"eins",emoji:"1️⃣"},{en:"two",de:"zwei",emoji:"2️⃣"},{en:"three",de:"drei",emoji:"3️⃣"},{en:"four",de:"vier",emoji:"4️⃣"},{en:"five",de:"fünf",emoji:"5️⃣"},{en:"six",de:"sechs",emoji:"6️⃣"},{en:"seven",de:"sieben",emoji:"7️⃣"},{en:"eight",de:"acht",emoji:"8️⃣"},{en:"nine",de:"neun",emoji:"9️⃣"},{en:"ten",de:"zehn",emoji:"🔟"}],
+  animals:[{en:"dog",de:"Hund",emoji:"🐶"},{en:"cat",de:"Katze",emoji:"🐱"},{en:"bird",de:"Vogel",emoji:"🐦"},{en:"fish",de:"Fisch",emoji:"🐟"},{en:"horse",de:"Pferd",emoji:"🐴"},{en:"cow",de:"Kuh",emoji:"🐮"},{en:"pig",de:"Schwein",emoji:"🐷"},{en:"sheep",de:"Schaf",emoji:"🐑"},{en:"rabbit",de:"Hase",emoji:"🐰"},{en:"bear",de:"Bär",emoji:"🐻"},{en:"mouse",de:"Maus",emoji:"🐭"},{en:"frog",de:"Frosch",emoji:"🐸"}],
+  food:[{en:"apple",de:"Apfel",emoji:"🍎"},{en:"banana",de:"Banane",emoji:"🍌"},{en:"bread",de:"Brot",emoji:"🍞"},{en:"milk",de:"Milch",emoji:"🥛"},{en:"water",de:"Wasser",emoji:"💧"},{en:"cheese",de:"Käse",emoji:"🧀"},{en:"egg",de:"Ei",emoji:"🥚"},{en:"cake",de:"Kuchen",emoji:"🍰"},{en:"ice cream",de:"Eis",emoji:"🍦"},{en:"pizza",de:"Pizza",emoji:"🍕"}],
+  body:[{en:"hand",de:"Hand",emoji:"✋"},{en:"foot",de:"Fuß",emoji:"🦶"},{en:"eye",de:"Auge",emoji:"👁️"},{en:"ear",de:"Ohr",emoji:"👂"},{en:"nose",de:"Nase",emoji:"👃"},{en:"mouth",de:"Mund",emoji:"👄"},{en:"mother",de:"Mutter",emoji:"👩"},{en:"father",de:"Vater",emoji:"👨"},{en:"baby",de:"Baby",emoji:"👶"}],
+  school:[{en:"book",de:"Buch",emoji:"📖"},{en:"pen",de:"Stift",emoji:"🖊️"},{en:"pencil",de:"Bleistift",emoji:"✏️"},{en:"bag",de:"Tasche",emoji:"🎒"},{en:"chair",de:"Stuhl",emoji:"🪑"},{en:"hello",de:"hallo",emoji:"👋"},{en:"thank you",de:"danke",emoji:"🙏"},{en:"please",de:"bitte",emoji:"🙂"}]
+};
+function engMake(list){return function(){const it=pick(list);const others=sample(list.filter(x=>x.en!==it.en),2);const r=Math.random();
+  if(r<0.34){const o=shuffle([it,...others]);return{type:"mc",q:`Wie heißt das auf Englisch?  ${it.emoji} (${it.de})`,o:o.map(x=>x.en),c:o.findIndex(x=>x.en===it.en)};}
+  if(r<0.67){const o=shuffle([it,...others]);return{type:"mc",q:`Was bedeutet „${it.en}"?`,o:o.map(x=>x.de),c:o.findIndex(x=>x.de===it.de)};}
+  const o=shuffle([it,...others]);return{type:"listen",say:it.en,q:"Hör gut zu – welches Wort hörst du?",o:o.map(x=>`${x.emoji} ${x.de}`),c:o.findIndex(x=>x.en===it.en)};};}
+function speak(t){try{const u=new SpeechSynthesisUtterance(t);u.lang="en-US";u.rate=.85;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}catch(e){}}
+
 /* ---------- Skill-Register (Mikro-Lernziele) ----------
    rate: Probenwahrscheinlichkeit 3=fast immer, 2=häufig, 1=gelegentlich  */
 const SUBJECTS={
   mathe:{name:"Mathematik",flower:"🌸",cls:"mathe"},
   deutsch:{name:"Deutsch",flower:"🌷",cls:"deutsch"},
-  hsu:{name:"HSU",flower:"🌻",cls:"hsu"}
+  hsu:{name:"HSU",flower:"🌻",cls:"hsu"},
+  englisch:{name:"Englisch",flower:"🦋",cls:"englisch"}
 };
 const TOPICS={
   m_zahlen:{sub:"mathe",name:"Zahlen & Rechnen"},
@@ -441,7 +463,12 @@ const TOPICS={
   d_woerter:{sub:"deutsch",name:"Wörter & Sprache"},
   h_natur:{sub:"hsu",name:"Tiere & Wald"},
   h_feuer:{sub:"hsu",name:"Feuer"},
-  h_werte:{sub:"hsu",name:"Werte & Zusammenleben"}
+  h_werte:{sub:"hsu",name:"Werte & Zusammenleben"},
+  e_basics:{sub:"englisch",name:"Farben & Zahlen"},
+  e_animals:{sub:"englisch",name:"Tiere"},
+  e_food:{sub:"englisch",name:"Essen & Trinken"},
+  e_body:{sub:"englisch",name:"Körper & Familie"},
+  e_school:{sub:"englisch",name:"Schule & Begrüßung"}
 };
 const SKILLS=[
   // Mathe
@@ -475,7 +502,14 @@ const SKILLS=[
   // HSU
   {id:"natur",t:"h_natur",name:"Tiere & Wald",g:[3,4],rate:2,gen:G.hsuNatur},
   {id:"feuer",t:"h_feuer",name:"Feuer",g:[3,4],rate:2,gen:G.hsuFeuer},
-  {id:"werte",t:"h_werte",name:"Werte",g:[3,4],rate:1,gen:G.hsuWerte}
+  {id:"werte",t:"h_werte",name:"Werte",g:[3,4],rate:1,gen:G.hsuWerte},
+  // Englisch (Kür)
+  {id:"e_col",t:"e_basics",name:"Farben",g:[3,4],rate:1,gen:engMake(ENG.colours)},
+  {id:"e_num",t:"e_basics",name:"Zahlen",g:[3,4],rate:1,gen:engMake(ENG.numbers)},
+  {id:"e_ani",t:"e_animals",name:"Tiere",g:[3,4],rate:1,gen:engMake(ENG.animals)},
+  {id:"e_foo",t:"e_food",name:"Essen & Trinken",g:[3,4],rate:1,gen:engMake(ENG.food)},
+  {id:"e_bod",t:"e_body",name:"Körper & Familie",g:[3,4],rate:1,gen:engMake(ENG.body)},
+  {id:"e_sch",t:"e_school",name:"Schule & Begrüßung",g:[3,4],rate:1,gen:engMake(ENG.school)}
 ];
 const SKILL=Object.fromEntries(SKILLS.map(s=>[s.id,s]));
 function topicsOf(sub){return Object.entries(TOPICS).filter(([id,t])=>t.sub===sub).map(([id])=>id);}
@@ -616,11 +650,11 @@ function renderHome(){
     mw.appendChild(el);
   });
   // Englisch (Kür, bald)
-  mw.insertAdjacentHTML("beforeend",`<div class="meadow englisch soon"><div class="flower">🦋</div><div class="m-info"><h3>Englisch <span class="pill">bald</span></h3><div class="prog">Spielerisch – kommt als Kür dazu</div></div><div class="go"><button disabled style="opacity:.5">bald</button></div></div>`);
+  mw.insertAdjacentHTML("beforeend",`<div class="meadow englisch"><div class="flower">🦋</div><div class="m-info"><h3>Englisch <span class="pill">Kür</span></h3><div class="prog">Honig: ${Math.round(subjectMastery("englisch")*100)}%</div></div><div class="go"><button data-sub="englisch">Sammeln</button></div></div>`);
   mw.querySelectorAll("button[data-sub]").forEach(b=>b.onclick=()=>startSession(b.dataset.sub));
   // Regale
   const sh=$("#shelves");sh.innerHTML="";
-  ["mathe","deutsch","hsu"].forEach(sub=>{
+  ["mathe","deutsch","hsu","englisch"].forEach(sub=>{
     const tps=topicsOf(sub).filter(tid=>skillsOfTopic(tid).some(gradeOK));
     if(!tps.length)return;
     const title=document.createElement("div");title.className="shelf-title";title.innerHTML=`${SUBJECTS[sub].flower} ${SUBJECTS[sub].name}`;
@@ -649,7 +683,7 @@ function renderQ(){
   if(SESS.pos>=SESS.queue.length){endSession();return;}
   $("#flowerfield").textContent=FLOWERS[SESS.pos%FLOWERS.length];
   const id=SESS.queue[SESS.pos];const sk=SKILL[id];
-  const ex=sk.gen(STATE.grade);SESS.ex={id,ex};
+  let ex=sk.gen(STATE.grade);let _t=0;while((ex.type==="mc"||ex.type==="listen")&&new Set(ex.o).size!==ex.o.length&&_t<8){ex=sk.gen(STATE.grade);_t++;}SESS.ex={id,ex};
   $("#qtag").textContent=sk.name;$("#qtext").textContent=ex.q;
   const az=$("#answerzone");az.innerHTML="";
   if(ex.type==="mc"){const w=document.createElement("div");w.className="options";
@@ -657,20 +691,25 @@ function renderQ(){
   else if(ex.type==="tf"){const w=document.createElement("div");w.className="options";
     [["Richtig",true],["Falsch",false]].forEach(([l,v])=>{const b=document.createElement("button");b.className="opt";b.textContent=l;b.onclick=()=>answerTF(b,v,ex,w);w.appendChild(b);});az.appendChild(w);}
   else if(ex.type==="order"){renderOrder(az,ex);}
+  else if(ex.type==="listen"){const w=document.createElement("div");w.className="options";ex.o.forEach((o,i)=>{const b=document.createElement("button");b.className="opt";b.textContent=o;b.onclick=()=>answerMC(b,i,ex,w);w.appendChild(b);});az.appendChild(w);const rb=document.createElement("button");rb.className="btn secondary";rb.textContent="🔊 Nochmal hören";rb.style.marginTop="10px";rb.onclick=()=>speak(ex.say);az.appendChild(rb);setTimeout(()=>speak(ex.say),250);}
   else{const row=document.createElement("div");row.className="answerrow";const inp=document.createElement("input");
     inp.type="text";inp.autocomplete="off";inp.autocapitalize="off";inp.spellcheck=false;inp.setAttribute("inputmode","text");inp.id="ansinp";
     inp.onkeydown=e=>{if(e.key==="Enter")checkInput(ex);};row.appendChild(inp);az.appendChild(row);
     $("#checkbtn").classList.remove("hidden");$("#checkbtn").onclick=()=>checkInput(ex);setTimeout(()=>inp.focus(),60);}
 }
 function lock(w){w&&w.querySelectorAll(".opt").forEach(b=>b.disabled=true);}
-function after(ok,sol){SESS.answered++;if(ok)SESS.correct++;const fb=$("#feedback");
+function after(ok,sol){SESS.answered++;if(ok)SESS.correct++;if(SESS.placement&&SESS.ex){const st=STATE.sk[SESS.ex.id];if(ok)st.box=Math.max(st.box,4);st.due=addDays(today(),BOX_INT[st.box]||1);save();}const fb=$("#feedback");
   if(ok){fb.textContent="Süß! Nektar gesammelt 🍯";fb.className="feedback good";honeyDrop();}
   else{fb.className="feedback bad";fb.innerHTML="Fast! "+(sol?`<span class="sol">Richtig: ${sol}</span>`:"");}
   bar();$("#nextbtn").classList.remove("hidden");$("#checkbtn").classList.add("hidden");}
 function answerMC(b,i,ex,w){if(SESS.locked)return;SESS.locked=true;lock(w);const ok=i===ex.c;w.children[ex.c].classList.add("correct");if(!ok)b.classList.add("wrong");grade(SESS.ex.id,ok);after(ok,ex.o[ex.c]);}
 function answerTF(b,v,ex,w){if(SESS.locked)return;SESS.locked=true;lock(w);const ok=v===ex.a;const lbl=ex.a?"Richtig":"Falsch";w.querySelectorAll(".opt").forEach(x=>{if(x.textContent===lbl)x.classList.add("correct");});if(!ok)b.classList.add("wrong");grade(SESS.ex.id,ok);after(ok,lbl);}
-function checkInput(ex){if(SESS.locked)return;const inp=$("#ansinp");const g=norm(inp.value);if(g==="")return;SESS.locked=true;
-  const ok=ex.a.some(a=>norm(a)===g);inp.disabled=true;inp.style.borderColor=ok?"var(--good)":"var(--bad)";grade(SESS.ex.id,ok);after(ok,ex.sol||ex.a[0]);}
+function checkInput(ex){if(SESS.locked)return;const inp=$("#ansinp");const raw=inp.value;const g=norm(raw);if(g==="")return;SESS.locked=true;
+  const numAns=ex.a.every(a=>/^-?\d+([.,]\d+)?$/.test(String(a).trim()));
+  let ok;
+  if(numAns){const gi=raw.replace(/[^0-9,.-]/g,"").replace(",",".");ok=gi!==""&&ex.a.some(a=>String(a).replace(",",".")===gi);}
+  else ok=ex.a.some(a=>norm(a)===g);
+  inp.disabled=true;inp.style.borderColor=ok?"var(--good)":"var(--bad)";grade(SESS.ex.id,ok);after(ok,ex.sol||ex.a[0]);}
 function renderOrder(az,ex){const correct=ex.seq;const chosen=[];const pool=document.createElement("div");pool.className="orderpool";
   shuffle(correct).forEach(item=>{const c=document.createElement("button");c.className="ochip";c.textContent=item;
     c.onclick=()=>{if(SESS.locked||c.classList.contains("chosen"))return;chosen.push(item);c.classList.add("chosen");c.querySelector(".num")||c.insertAdjacentHTML("afterbegin",`<span class="num">${chosen.length}</span>`);
@@ -680,7 +719,7 @@ function renderOrder(az,ex){const correct=ex.seq;const chosen=[];const pool=docu
 function honeyDrop(){const st=$(".stage");const d=document.createElement("div");d.className="drop";d.textContent="🍯";st.appendChild(d);setTimeout(()=>d.remove(),820);}
 $("#nextbtn").onclick=()=>{SESS.pos++;renderQ();};
 $("#quitbtn").onclick=()=>{if(SESS&&SESS.placeAll){STATE.placed=true;save();}if(SESS&&!SESS.placement&&SESS.answered>0)finishOwed();show("home");renderHome();};
-function finishOwed(){const t=today();STATE.last[SESS.sub]=t;STATE.owed[SESS.sub]=Math.max(0,STATE.owed[SESS.sub]-1);save();}
+function finishOwed(){if(STATE.owed[SESS.sub]==null)return;const t=today();STATE.last[SESS.sub]=t;STATE.owed[SESS.sub]=Math.max(0,STATE.owed[SESS.sub]-1);save();}
 function endSession(){
   if(SESS.placeAll){STATE.placed=true;save();}
   else if(!SESS.placement)finishOwed();
@@ -696,7 +735,21 @@ $("#backhome").onclick=()=>{show("home");renderHome();};
 /* ---------- Eltern-Bereich ---------- */
 $("#elternbtn").onclick=()=>{renderEltern();show("eltern");};
 $("#elternback").onclick=()=>{show("home");renderHome();};
+function renderLernstand(){
+  const box=$("#lernstand");if(!box)return;
+  let html=`<div style="font-size:.8rem;color:var(--muted);margin-bottom:6px">🟢 sicher · 🟡 teils · 🔴 noch üben · ⚪ noch nicht geübt</div>`;
+  ["mathe","deutsch","hsu","englisch"].forEach(sub=>{
+    const tps=topicsOf(sub).filter(tid=>skillsOfTopic(tid).some(gradeOK));if(!tps.length)return;
+    html+=`<div style="margin:10px 0 4px;font-weight:800">${SUBJECTS[sub].flower} ${SUBJECTS[sub].name} · ${Math.round(subjectMastery(sub)*100)}%</div>`;
+    tps.forEach(tid=>{const ks=skillsOfTopic(tid).filter(gradeOK);const m=topicMastery(tid);const pct=Math.round(m*100);
+      let seen=0;ks.forEach(s=>seen+=STATE.sk[s.id].seen);
+      const dot=seen===0?"⚪":m>=0.7?"🟢":m>=0.35?"🟡":"🔴";
+      html+=`<div style="display:flex;align-items:center;gap:8px;margin:3px 0;font-size:.9rem"><span>${dot}</span><span style="flex:1">${TOPICS[tid].name}</span><span style="width:90px;height:9px;background:#efe6d4;border-radius:999px;overflow:hidden;display:inline-block;vertical-align:middle"><span style="display:block;height:100%;width:${pct}%;background:#f3b424"></span></span><span style="width:38px;text-align:right;color:var(--muted)">${pct}%</span></div>`;});
+  });
+  box.innerHTML=html;
+}
 function renderEltern(){
+  renderLernstand();
   $("#gradesel").value=STATE.grade;
   $("#gradesel").onchange=e=>{STATE.grade=Number(e.target.value);save();};
   const gt2=$("#gamesToggle");if(gt2){gt2.checked=STATE.games!==false;gt2.onchange=e=>{STATE.games=e.target.checked;save();};}
