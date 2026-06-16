@@ -25,7 +25,7 @@
     background:linear-gradient(180deg,var(--sky1),var(--sky2) 70%);min-height:100vh;-webkit-user-select:none;user-select:none;}
   .wrap{max-width:780px;margin:0 auto;padding:16px 16px 70px;}
   .hidden{display:none !important;}
-  header.app{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+  header.app{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;margin-bottom:10px;}
   header.app .bee{width:64px;height:64px;flex:none;}
   header.app h1{font-size:1.6rem;margin:0;}
   header.app .sub{font-size:.82rem;color:var(--muted);}
@@ -72,10 +72,9 @@
   .jar .jpct{font-size:.68rem;font-weight:800;color:var(--honey-deep);}
 
   /* Sephi-Banner */
-  .sephiband{position:relative;height:96px;margin:6px 0 2px;overflow:hidden;}
-  .sephiband .grass{position:absolute;left:0;right:0;bottom:0;height:20px;background:#cdeeba;border-radius:50% 50% 0 0/100% 100% 0 0;}
-  .sephiband .fl{position:absolute;bottom:14px;font-size:1.4rem;}
-  .sflight{position:absolute;top:6px;left:0;width:78px;animation:sflight 9s infinite ease-in-out;}
+  .sephiband{position:relative;height:152px;margin:6px 0 2px;overflow:hidden;border-radius:18px;}
+  .sephiband .meadow{position:absolute;left:0;right:0;bottom:0;}
+  .sflight{position:absolute;top:6px;left:0;width:86px;animation:sflight 9s infinite ease-in-out;z-index:2;}
   .sbob{animation:sbob 1.6s infinite ease-in-out;}
   .wing-l{transform-box:fill-box;transform-origin:88% 78%;animation:flutterL .14s infinite ease-in-out;}
   .wing-r{transform-box:fill-box;transform-origin:12% 78%;animation:flutterR .14s infinite ease-in-out;}
@@ -169,6 +168,17 @@
   </div>
 </section>
 
+<!-- ===== WELCOME (Erststart) ===== -->
+<section id="welcome" class="hidden">
+  <div class="card summary">
+    <div class="bee" id="welbee" style="width:84px;height:84px;margin:0 auto"></div>
+    <div style="font-size:1.35rem;font-weight:800;margin:8px 0">Hallo, ich bin Sephi! 🐝</div>
+    <div style="color:var(--muted);font-size:1.05rem;line-height:1.45;margin:0 0 14px">Zeig mir zuerst in einem kleinen Schnupperflug, was du schon alles kannst. Dann weiß ich, an welchen Blüten wir am besten sammeln.</div>
+    <button class="btn" id="startplace">Schnupperflug starten</button>
+    <button class="btn ghost" id="skipplace">Später</button>
+  </div>
+</section>
+
 <!-- ===== SESSION ===== -->
 <section id="session" class="hidden">
   <div class="session-top">
@@ -227,6 +237,16 @@
     <div class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Tippe an, was noch nicht sicher saß – diese Themen werden verstärkt geübt. (Eingescannte Proben werte ich im Chat aus und ergänze passende Aufgaben.)</div>
     <div class="field"><label>Themen mit Schwächen</label><div class="checks" id="gaptopics"></div></div>
     <button class="btn secondary" id="savegaps">Schwächen eintragen</button>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">🧮 Probe nachbewerten (ISB-Schlüssel)</h3>
+    <div class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Nur hier im Eltern-Bereich sichtbar. Trage die Punkte ein – die Note wird nach dem gängigen bayerischen Grundschul-Notenschlüssel berechnet, damit du die Bewertung der Lehrkraft prüfen kannst.</div>
+    <div class="field"><label>Erreichte Punkte</label><input type="number" id="pPoints" inputmode="decimal" step="0.5"></div>
+    <div class="field"><label>Gesamtpunkte</label><input type="number" id="pMax" inputmode="decimal" step="0.5"></div>
+    <div class="field"><label>Note der Lehrkraft (optional)</label><input type="number" id="pTeacher" inputmode="numeric" min="1" max="6"></div>
+    <button class="btn secondary" id="calcBtn">Note berechnen</button>
+    <div id="calcResult" style="margin-top:10px;font-weight:700;line-height:1.4"></div>
   </div>
 
   <div class="card">
@@ -455,12 +475,12 @@ function daysUntil(s){return Math.round((pdate(s)-pdate(today()))/86400000);}
 function defState(){
   const sk={};SKILLS.forEach(s=>sk[s.id]={box:0,due:today(),seen:0,correct:0});
   const owed={},last={};["mathe","deutsch","hsu"].forEach(s=>{owed[s]=0;last[s]="";});
-  return{sk,owed,last,gen:"",grade:3,probe:null,gaps:[],created:today()};
+  return{sk,owed,last,gen:"",grade:3,probe:null,gaps:[],placed:false,created:today()};
 }
 function load(){try{const r=localStorage.getItem(KEY);if(!r)return defState();const s=JSON.parse(r);
   SKILLS.forEach(k=>{if(!s.sk[k.id])s.sk[k.id]={box:0,due:today(),seen:0,correct:0};});
-  if(s.grade==null)s.grade=3;if(!s.gaps)s.gaps=[];return s;}catch(e){return defState();}}
-function save(){localStorage.setItem(KEY,JSON.stringify(STATE));}
+  if(s.grade==null)s.grade=3;if(!s.gaps)s.gaps=[];if(s.placed==null)s.placed=false;return s;}catch(e){return defState();}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e){}}
 
 function rollover(){
   const t=today();if(STATE.gen===t)return;
@@ -526,17 +546,30 @@ return `<svg viewBox="0 0 80 116" xmlns="http://www.w3.org/2000/svg"><defs><clip
 <g clip-path="url(#${id})"><rect x="14" y="56" width="52" height="56" fill="#fbf3df"/><rect x="14" y="${fy}" width="52" height="${fh}" fill="#f3b424"/><rect x="14" y="${fy}" width="52" height="5" fill="#e8a317" opacity=".6"/></g>
 <path d="M16 60 q0 -4 4 -4 h40 q4 0 4 4 v40 q0 8 -8 8 h-32 q-8 0 -8 -8 z" fill="none" stroke="#d9a23a" stroke-width="3"/>${p>=1?'<text x="40" y="92" font-size="20" text-anchor="middle">⭐</text>':''}</svg>`;}
 
+function noteFromPct(p){if(p>=96)return 1;if(p>=80)return 2;if(p>=60)return 3;if(p>=45)return 4;if(p>=16)return 5;return 6;}
+function renderWelcome(){$("#welbee").innerHTML=sephiSVG();$("#startplace").onclick=()=>startSession("all",true);$("#skipplace").onclick=()=>{STATE.placed=true;save();renderHome();show("home");};}
+let MEADOW=null;
+function buildMeadow(){
+  if(MEADOW) return MEADOW;
+  const cols=["#FF8FB0","#9B8CCE","#74C9E5","#FBBB2D","#FF7A59","#ff5fa2","#8ed16a","#f3a0d0","#ffd23f"];
+  const cen=["#F4E600","#ffffff","#FBBB2D"];
+  let f="";const xs=[];
+  for(let x=16;x<=764;x+=Math.round(22+Math.random()*20))xs.push(x);
+  xs.forEach(x=>{const sc=(0.5+Math.random()*0.8).toFixed(2);const base=150;const headY=Math.round(base-(46+Math.random()*58)*sc);
+    const col=cols[Math.floor(Math.random()*cols.length)];const c=cen[Math.floor(Math.random()*cen.length)];const stem=((base-headY)/sc).toFixed(0);
+    f+=`<g transform="translate(${x},${headY}) scale(${sc})"><line x1="0" y1="4" x2="0" y2="${stem}" stroke="#5AAE3C" stroke-width="6" stroke-linecap="round"/><path d="M0 ${Math.round(stem*0.55)} q15 -7 23 6 q-12 6 -23 -6 z" fill="#69c44f"/><g><ellipse cx="0" cy="-12" rx="7" ry="12" fill="${col}"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="${col}" transform="rotate(72)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="${col}" transform="rotate(144)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="${col}" transform="rotate(216)"/><ellipse cx="0" cy="-12" rx="7" ry="12" fill="${col}" transform="rotate(288)"/><circle cx="0" cy="0" r="8" fill="${c}"/></g></g>`;});
+  MEADOW=`<svg class="meadow" viewBox="0 0 780 150" width="100%" height="150" preserveAspectRatio="xMidYMax slice"><path d="M0 120 Q200 104 390 116 Q580 128 780 108 L780 150 L0 150 Z" fill="#cdeeba"/><path d="M0 134 Q200 122 390 132 Q580 142 780 126 L780 150 L0 150 Z" fill="#bce39f"/>${f}</svg>`;
+  return MEADOW;
+}
 /* ---------- Navigation ---------- */
 const $=s=>document.querySelector(s);
-const screens={home:$("#home"),session:$("#session"),done:$("#done"),eltern:$("#eltern")};
+const screens={welcome:$("#welcome"),home:$("#home"),session:$("#session"),done:$("#done"),eltern:$("#eltern")};
 function show(n){Object.values(screens).forEach(s=>s.classList.add("hidden"));screens[n].classList.remove("hidden");window.scrollTo(0,0);}
 
 function renderHome(){
   $("#headbee").innerHTML=sephiSVG();$("#sessionbee").innerHTML=sephiSVG();$("#donebee").innerHTML=sephiSVG();
   // Sephi-Flugband
-  $("#sephiband").innerHTML=`<div class="grass"></div>
-    <div class="fl" style="left:60px">🌸</div><div class="fl" style="left:250px">🌷</div><div class="fl" style="left:440px">🌻</div><div class="fl" style="left:620px">🌼</div>
-    <div class="sflight"><div class="sbob">${sephiSVG()}</div></div>`;
+  $("#sephiband").innerHTML=buildMeadow()+`<div class="sflight"><div class="sbob">${sephiSVG()}</div></div>`;
   // Probe-Radar
   const t=today();let banner="";
   if(STATE.probe&&STATE.probe.sub){const d=daysUntil(STATE.probe.date);
@@ -579,10 +612,11 @@ function renderHome(){
 /* ---------- Session ---------- */
 let SESS=null;
 function startSession(sub,placement){
-  let queue;
-  if(placement){queue=SKILLS.filter(s=>TOPICS[s.t].sub===sub&&gradeOK(s)).map(s=>s.id);}
+  let queue,placeAll=false;
+  if(sub==="all"){placeAll=true;const ks=SKILLS.filter(gradeOK);const byT={};ks.forEach(s=>{(byT[s.t]=byT[s.t]||[]).push(s.id);});const lists=Object.values(byT);queue=[];let i=0;while(lists.some(l=>l.length)){const l=lists[i%lists.length];if(l.length)queue.push(l.shift());i++;}}
+  else if(placement){queue=SKILLS.filter(s=>TOPICS[s.t].sub===sub&&gradeOK(s)).map(s=>s.id);}
   else queue=buildQueue(sub);
-  SESS={sub,queue,pos:0,answered:0,correct:0,target:queue.length,placement:!!placement,ex:null,locked:false};
+  SESS={sub,queue,pos:0,answered:0,correct:0,target:queue.length,placement:!!placement,placeAll,ex:null,locked:false};
   show("session");renderQ();
 }
 const FLOWERS=["🌼","🌷","🌻","🌸","💐","🌺","🏵️"];
@@ -623,10 +657,11 @@ function renderOrder(az,ex){const correct=ex.seq;const chosen=[];const pool=docu
   const hint=document.createElement("div");hint.style.cssText="font-size:.8rem;color:var(--muted);margin-top:8px";hint.textContent="Tippe der Reihe nach an.";az.appendChild(hint);}
 function honeyDrop(){const st=$(".stage");const d=document.createElement("div");d.className="drop";d.textContent="🍯";st.appendChild(d);setTimeout(()=>d.remove(),820);}
 $("#nextbtn").onclick=()=>{SESS.pos++;renderQ();};
-$("#quitbtn").onclick=()=>{if(SESS&&!SESS.placement&&SESS.answered>0)finishOwed();show("home");renderHome();};
+$("#quitbtn").onclick=()=>{if(SESS&&SESS.placeAll){STATE.placed=true;save();}if(SESS&&!SESS.placement&&SESS.answered>0)finishOwed();show("home");renderHome();};
 function finishOwed(){const t=today();STATE.last[SESS.sub]=t;STATE.owed[SESS.sub]=Math.max(0,STATE.owed[SESS.sub]-1);save();}
 function endSession(){
-  if(!SESS.placement)finishOwed();
+  if(SESS.placeAll){STATE.placed=true;save();}
+  else if(!SESS.placement)finishOwed();
   const amount=SESS.target?Math.min(1,SESS.answered/SESS.target):0;const sweet=SESS.answered?SESS.correct/SESS.answered:0;
   $("#jar-amount").innerHTML=jarSVG(amount);$("#jar-sweet").innerHTML=jarSVG(sweet);
   $("#donetitle").textContent=SESS.placement?"Schnupperflug fertig!":"Blütenflug geschafft!";
@@ -661,6 +696,12 @@ function renderEltern(){
     STATE.gaps.forEach(tid=>skillsOfTopic(tid).forEach(s=>{STATE.sk[s.id].box=Math.min(STATE.sk[s.id].box,1);STATE.sk[s.id].due=today();}));save();alert("Schwächen eingetragen – diese Themen werden verstärkt geübt.");};
   // Lernstandserhebung
   document.querySelectorAll("button[data-place]").forEach(b=>b.onclick=()=>startSession(b.dataset.place,true));
+  const cb=$("#calcBtn");if(cb)cb.onclick=()=>{const pt=parseFloat($("#pPoints").value),mx=parseFloat($("#pMax").value);const res=$("#calcResult");
+    if(!(mx>0)||isNaN(pt)){res.textContent="Bitte erreichte Punkte und Gesamtpunkte eingeben.";return;}
+    const pct=Math.round(pt/mx*1000)/10;const note=noteFromPct(pct);const tn=parseInt($("#pTeacher").value,10);
+    let txt=`Ergebnis: ${pct} % → Note ${note} (Schlüssel: 1 ab 96 %, 2 ab 80 %, 3 ab 60 %, 4 ab 45 %, 5 ab 16 %).`;
+    if(tn>=1&&tn<=6)txt+= tn===note?` Die Note ${tn} der Lehrkraft passt.`:(tn<note?` Die Lehrkraft hat mit ${tn} milder bewertet.`:` Die Lehrkraft hat mit ${tn} strenger bewertet.`);
+    res.textContent=txt;};
 }
 $("#resetbtn").onclick=()=>{if(confirm("Wirklich allen Honig und Fortschritt löschen?")){STATE=defState();save();renderEltern();}};
 
@@ -669,7 +710,8 @@ $("#resetbtn").onclick=()=>{if(confirm("Wirklich allen Honig und Fortschritt lö
   icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f6c343'/%3E%3Cellipse cx='32' cy='36' rx='15' ry='17' fill='%23222'/%3E%3C/svg%3E",sizes:"any",type:"image/svg+xml"}]};
   const b=new Blob([JSON.stringify(m)],{type:"application/manifest+json"});const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(b);document.head.appendChild(l);})();
 
-rollover();renderHome();show("home");
+rollover();
+if(!STATE.placed){renderWelcome();show("welcome");}else{renderHome();show("home");}
 </script>
 </body>
 </html>
