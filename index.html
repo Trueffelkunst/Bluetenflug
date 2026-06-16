@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Sephis Blütenflug</title>
+<meta name="theme-color" content="#f6c343">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Blütenflug">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f6c343'/%3E%3Cellipse cx='32' cy='36' rx='15' ry='17' fill='%23222'/%3E%3Crect x='15' y='28' width='34' height='5' fill='%23f6c343'/%3E%3Crect x='15' y='40' width='34' height='5' fill='%23f6c343'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --honey:#f6c343;--honey-deep:#e8a317;--bee:#2b2622;
+    --sky1:#eaf6ff;--sky2:#fff7e0;--green:#7bc86c;--green-deep:#5aa84c;
+    --pink:#ff8fab;--purple:#9b8cce;--blue:#74c9e5;
+    --card:#ffffff;--ink:#3a342c;--muted:#8a8175;
+    --good:#5aa84c;--bad:#e6824a;
+    --shadow:0 6px 18px rgba(120,90,20,.16);--radius:22px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,"SF Pro Rounded","Segoe UI",system-ui,Arial,sans-serif;color:var(--ink);
+    background:linear-gradient(180deg,var(--sky1),var(--sky2) 70%);min-height:100vh;-webkit-user-select:none;user-select:none;}
+  .wrap{max-width:780px;margin:0 auto;padding:16px 16px 70px;}
+  .hidden{display:none !important;}
+  header.app{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+  header.app .bee{width:64px;height:64px;flex:none;}
+  header.app h1{font-size:1.6rem;margin:0;}
+  header.app .sub{font-size:.82rem;color:var(--muted);}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin:12px 0;}
+  button{font-family:inherit;cursor:pointer;border:none;}
+  .btn{background:var(--honey);color:var(--bee);font-weight:800;font-size:1.1rem;padding:15px 20px;border-radius:18px;box-shadow:0 4px 0 var(--honey-deep);transition:transform .05s,box-shadow .05s;width:100%;}
+  .btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--honey-deep);}
+  .btn.secondary{background:#fff;color:var(--ink);box-shadow:0 4px 0 #e6ddcd;border:2px solid #efe6d4;}
+  .btn.ghost{background:transparent;box-shadow:none;color:var(--muted);font-size:.95rem;padding:9px;}
+  h2.sec{margin:18px 4px 4px;font-size:1.1rem;}
+
+  /* Probe-Radar */
+  .radar{background:linear-gradient(120deg,#fff,#fef0f4);}
+  .radar h3{margin:0 0 8px;font-size:1.05rem;display:flex;align-items:center;gap:8px;}
+  .probe-banner{background:#ffe7d6;border:1px solid #f3b98e;border-radius:14px;padding:10px 12px;margin-bottom:10px;font-weight:700;color:#b4521f;}
+  .pred{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .pred .chip{background:#fff;border:1px solid #f0dca0;border-radius:999px;padding:4px 10px;font-size:.82rem;color:#9a6b12;font-weight:700;}
+  .pred .chip b{color:#c0381a;}
+
+  /* Wiesen */
+  .meadows{display:grid;gap:10px;}
+  .meadow{display:flex;align-items:center;gap:12px;border-radius:var(--radius);padding:13px 14px;box-shadow:var(--shadow);}
+  .meadow.mathe{background:linear-gradient(120deg,#fff,#eaf6ff);}
+  .meadow.deutsch{background:linear-gradient(120deg,#fff,#ffeef3);}
+  .meadow.hsu{background:linear-gradient(120deg,#fff,#eefae8);}
+  .meadow.englisch{background:linear-gradient(120deg,#fff,#f1ecfb);}
+  .meadow .flower{font-size:2rem;width:42px;text-align:center;flex:none;}
+  .meadow .m-info{flex:1;min-width:0;}
+  .meadow .m-info h3{margin:0 0 2px;font-size:1.12rem;}
+  .meadow .m-info .prog{font-size:.8rem;color:var(--muted);}
+  .meadow .go button{background:var(--honey);color:var(--bee);font-weight:800;border-radius:14px;padding:11px 15px;box-shadow:0 3px 0 var(--honey-deep);}
+  .meadow .go button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--honey-deep);}
+  .meadow.done .go button{background:#eef3ea;color:var(--green-deep);box-shadow:0 3px 0 #cfe3c6;}
+  .meadow.soon{opacity:.7;}
+  .badge-owed{display:inline-block;background:var(--bad);color:#fff;font-size:.7rem;font-weight:800;border-radius:999px;padding:2px 8px;margin-left:6px;}
+  .badge-probe{display:inline-block;background:#c0381a;color:#fff;font-size:.7rem;font-weight:800;border-radius:999px;padding:2px 8px;margin-left:6px;}
+
+  /* Regale */
+  .shelf-title{display:flex;align-items:center;gap:8px;margin:8px 2px 4px;font-weight:800;color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.4px;}
+  .jars{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;padding:12px 10px 8px;border-radius:16px;background:linear-gradient(180deg,#f3e3c4,#e7cfa0);box-shadow:inset 0 -8px 0 #d9bd85,var(--shadow);}
+  .jar{display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .jar svg{width:54px;height:66px;}
+  .jar .jlabel{font-size:.68rem;text-align:center;line-height:1.05;min-height:2.1em;}
+  .jar .jpct{font-size:.68rem;font-weight:800;color:var(--honey-deep);}
+
+  /* Sephi-Banner */
+  .sephiband{position:relative;height:96px;margin:6px 0 2px;overflow:hidden;}
+  .sephiband .grass{position:absolute;left:0;right:0;bottom:0;height:20px;background:#cdeeba;border-radius:50% 50% 0 0/100% 100% 0 0;}
+  .sephiband .fl{position:absolute;bottom:14px;font-size:1.4rem;}
+  .sflight{position:absolute;top:6px;left:0;width:78px;animation:sflight 9s infinite ease-in-out;}
+  .sbob{animation:sbob 1.6s infinite ease-in-out;}
+  .wing-l{transform-box:fill-box;transform-origin:88% 78%;animation:flutterL .14s infinite ease-in-out;}
+  .wing-r{transform-box:fill-box;transform-origin:12% 78%;animation:flutterR .14s infinite ease-in-out;}
+  @keyframes sflight{0%{transform:translate(10px,40px)}25%{transform:translate(180px,8px)}50%{transform:translate(370px,26px)}75%{transform:translate(560px,6px)}100%{transform:translate(10px,40px)}}
+  @keyframes sbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  @keyframes flutterL{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(-26deg)}}
+  @keyframes flutterR{0%,100%{transform:rotate(6deg)}50%{transform:rotate(26deg)}}
+  @media (prefers-reduced-motion: reduce){.sflight,.sbob,.wing-l,.wing-r{animation:none}}
+
+  /* Session */
+  .session-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .nectarbar{flex:1;height:15px;border-radius:999px;background:#efe6d4;overflow:hidden;}
+  .nectarbar>div{height:100%;width:0;background:linear-gradient(90deg,var(--honey),var(--honey-deep));transition:width .4s;}
+  .stage{position:relative;text-align:center;}
+  .flowerfield{font-size:2.2rem;margin:4px 0 0;}
+  .qtag{font-size:.74rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+  .qtext{font-size:1.45rem;font-weight:800;line-height:1.3;margin:6px 0 14px;}
+  .options{display:grid;gap:9px;}
+  .opt{background:#fff;border:2px solid #efe6d4;border-radius:15px;padding:14px;font-size:1.2rem;font-weight:700;color:var(--ink);box-shadow:0 3px 0 #ece2d0;}
+  .opt:active{transform:translateY(2px);}
+  .opt.correct{background:#e7f6e1;border-color:var(--good);color:var(--green-deep);}
+  .opt.wrong{background:#fdeede;border-color:var(--bad);color:#c25a23;}
+  .opt[disabled]{opacity:1;}
+  .answerrow{display:flex;gap:9px;}
+  .answerrow input{flex:1;font-family:inherit;font-size:1.4rem;font-weight:800;text-align:center;padding:13px;border-radius:15px;border:2px solid #efe6d4;background:#fffdf8;color:var(--ink);-webkit-user-select:text;user-select:text;}
+  .answerrow input:focus{outline:none;border-color:var(--honey-deep);}
+  .feedback{min-height:26px;margin-top:12px;font-size:1.1rem;font-weight:800;}
+  .feedback.good{color:var(--good);}.feedback.bad{color:var(--bad);}
+  .feedback .sol{display:block;color:var(--ink);font-weight:700;font-size:.95rem;margin-top:3px;}
+  @keyframes drop{0%{transform:translateY(-8px) scale(.6);opacity:0}30%{opacity:1}100%{transform:translateY(60px) scale(1);opacity:0}}
+  .drop{position:absolute;left:50%;top:0;font-size:1.5rem;animation:drop .8s ease forwards;pointer-events:none;}
+  /* match */
+  .match{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .match .col{display:flex;flex-direction:column;gap:8px;}
+  .mitem{background:#fff;border:2px solid #efe6d4;border-radius:13px;padding:12px;font-weight:700;font-size:1.05rem;box-shadow:0 3px 0 #ece2d0;text-align:center;}
+  .mitem.sel{border-color:var(--honey-deep);background:#fff7df;}
+  .mitem.matched{background:#eef3ea;border-color:var(--green-deep);color:var(--green-deep);}
+  .mitem .num{font-size:.7rem;color:var(--muted);display:block;}
+  /* order */
+  .orderpool{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+  .ochip{background:#fff;border:2px solid #efe6d4;border-radius:13px;padding:11px 14px;font-weight:700;font-size:1.05rem;box-shadow:0 3px 0 #ece2d0;}
+  .ochip.chosen{background:#fff7df;border-color:var(--honey-deep);}
+  .ochip .num{display:inline-block;background:var(--honey-deep);color:#fff;border-radius:50%;width:20px;height:20px;line-height:20px;font-size:.8rem;text-align:center;margin-right:6px;}
+
+  /* Summary */
+  .summary{text-align:center;}
+  .twojars{display:flex;justify-content:center;gap:28px;margin:12px 0;}
+  .twojars .j{display:flex;flex-direction:column;align-items:center;gap:5px;}
+  .twojars .j svg{width:70px;height:88px;}
+  .twojars .j .cap{font-size:.82rem;color:var(--muted);font-weight:700;}
+
+  /* Eltern */
+  .field{margin:10px 0;}
+  .field label{display:block;font-weight:700;font-size:.9rem;margin-bottom:4px;}
+  .field input,.field select{width:100%;font-family:inherit;font-size:1rem;padding:10px;border-radius:12px;border:2px solid #efe6d4;background:#fffdf8;-webkit-user-select:text;user-select:text;}
+  .checks{display:flex;flex-wrap:wrap;gap:8px;}
+  .checks label{display:flex;align-items:center;gap:6px;background:#fff;border:2px solid #efe6d4;border-radius:12px;padding:8px 10px;font-size:.9rem;font-weight:600;}
+  .footer-note{text-align:center;color:var(--muted);font-size:.74rem;margin-top:18px;line-height:1.5;}
+  .pill{display:inline-block;background:#fff5da;border:1px solid #f0dca0;color:#a87b14;border-radius:999px;padding:3px 10px;font-size:.72rem;font-weight:700;margin:2px;}
+  .navrow{display:flex;gap:8px;margin-top:10px;}
+  .navrow .btn{font-size:.95rem;padding:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ===== HOME ===== -->
+<section id="home">
+  <header class="app">
+    <div class="bee" id="headbee"></div>
+    <div><h1>Sephis Blütenflug</h1><div class="sub">Jeden Tag ein bisschen Honig sammeln</div></div>
+  </header>
+
+  <div class="sephiband" id="sephiband"></div>
+
+  <div class="card radar">
+    <h3>🍯 Probe-Radar</h3>
+    <div id="probebanner"></div>
+    <div id="predictions"></div>
+  </div>
+
+  <div class="meadows" id="meadows"></div>
+
+  <h2 class="sec">Deine Honigregale</h2>
+  <div id="shelves"></div>
+
+  <div class="footer-note">
+    Alles bleibt nur auf diesem Gerät. Kein Konto, keine Werbung.<br>
+    Aufgaben teils nach IQB VERA-3 (CC BY 4.0), bearbeitet · LehrplanPLUS Bayern.<br><br>
+    <button class="btn ghost" id="elternbtn">Eltern-Bereich</button>
+  </div>
+</section>
+
+<!-- ===== SESSION ===== -->
+<section id="session" class="hidden">
+  <div class="session-top">
+    <button class="btn ghost" id="quitbtn" style="flex:none">✕</button>
+    <div class="nectarbar"><div id="nectarfill"></div></div>
+    <div class="bee" id="sessionbee" style="width:38px;height:38px;flex:none"></div>
+  </div>
+  <div class="stage">
+    <div class="flowerfield" id="flowerfield">🌼</div>
+    <div class="card">
+      <div class="qtag" id="qtag"></div>
+      <div class="qtext" id="qtext"></div>
+      <div id="answerzone"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="btn hidden" id="checkbtn">Prüfen</button>
+      <button class="btn hidden" id="nextbtn">Weiter ➜</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DONE ===== -->
+<section id="done" class="hidden">
+  <div class="card summary">
+    <div class="bee" id="donebee" style="width:64px;height:64px;margin:0 auto"></div>
+    <div style="font-size:1.3rem;font-weight:800;margin:6px 0" id="donetitle">Geschafft!</div>
+    <div class="twojars">
+      <div class="j"><div id="jar-amount"></div><div class="cap">So viel Honig</div></div>
+      <div class="j"><div id="jar-sweet"></div><div class="cap">So süß war er</div></div>
+    </div>
+    <div id="donemsg" style="color:var(--muted);font-size:1.02rem;line-height:1.4;margin:4px 0 14px"></div>
+    <button class="btn" id="backhome">Zurück zu den Regalen</button>
+  </div>
+</section>
+
+<!-- ===== ELTERN ===== -->
+<section id="eltern" class="hidden">
+  <header class="app"><div><h1 style="font-size:1.3rem">Eltern-Bereich</h1><div class="sub">Steuerung des Lernplans</div></div></header>
+
+  <div class="card">
+    <h3 style="margin-top:0">Jahrgangsstufe</h3>
+    <div class="field"><select id="gradesel"><option value="3">3. Klasse</option><option value="4">4. Klasse</option></select></div>
+    <div class="sub" style="color:var(--muted);font-size:.85rem">Bestimmt, welche Themen geübt werden. Für den Übergang einfach auf 4 stellen.</div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">📣 Angekündigte Probe</h3>
+    <div class="field"><label>Fach</label><select id="probesub"><option value="">— keine —</option><option value="mathe">Mathematik</option><option value="deutsch">Deutsch</option><option value="hsu">HSU</option></select></div>
+    <div class="field"><label>Datum</label><input type="date" id="probedate"></div>
+    <div class="field"><label>Themen (was wurde angekündigt?)</label><div class="checks" id="probetopics"></div></div>
+    <button class="btn secondary" id="saveprobe">Probe speichern</button>
+    <div class="sub" style="color:var(--muted);font-size:.85rem;margin-top:8px">Sephi übt dann gezielt genau diese Themen vor.</div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">📷 Letzte Probe nachtragen</h3>
+    <div class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Tippe an, was noch nicht sicher saß – diese Themen werden verstärkt geübt. (Eingescannte Proben werte ich im Chat aus und ergänze passende Aufgaben.)</div>
+    <div class="field"><label>Themen mit Schwächen</label><div class="checks" id="gaptopics"></div></div>
+    <button class="btn secondary" id="savegaps">Schwächen eintragen</button>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Lernstandserhebung</h3>
+    <div class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Sephis Schnupperflug: ein kurzer Check pro Fach, der die Honiggläser passend vorfüllt.</div>
+    <div class="navrow">
+      <button class="btn secondary" data-place="mathe">Mathe-Check</button>
+      <button class="btn secondary" data-place="deutsch">Deutsch-Check</button>
+      <button class="btn secondary" data-place="hsu">HSU-Check</button>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    <button class="btn ghost" id="resetbtn">Fortschritt zurücksetzen</button>
+  </div>
+  <button class="btn" id="elternback">Zurück</button>
+</section>
+
+</div>
+
+<script>
+/* =====================================================================
+   SEPHIS BLÜTENFLUG  — Lern-App (Herz-Modell)
+   Links: Lernstand (Können)  ·  Rechts: Probenvorhersage  ·  Verbindung:
+   Priorität × (1 − Beherrschung) = heutiger Fokus.
+   Self-contained, lokale Daten (localStorage), für GitHub Pages.
+   Didaktik: Retrieval + Spacing + Interleaving + Mastery + Feedback.
+   Aufgaben nach echten bayerischen Probenformaten; IQB VERA-3 (CC BY 4.0).
+   ===================================================================== */
+
+/* ---------- kleine Helfer ---------- */
+const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const sample=(a,n)=>shuffle(a).slice(0,n);
+const norm=s=>String(s).trim().toLowerCase().replace(/\s+/g,"").replace(",",".").replace(/ß/g,"ss");
+
+/* ---------- Wortmaterial Deutsch (geprüft) ---------- */
+const NOMEN=["Hund","Tisch","Baum","Schule","Blume","Katze","Auto","Haus","Kind","Buch","Apfel","Sonne","Wald","Fenster","Garten"];
+const VERBEN=["laufen","spielen","singen","lesen","springen","lachen","schreiben","malen","essen","fahren","schwimmen","tanzen"];
+const ADJEKTIVE=["schnell","schön","groß","klein","rot","kalt","warm","leise","stark","lustig","alt","hell"];
+const VERBFORMEN=[ // inf, Präteritum (er), Futur (er)
+  {i:"spielen",pr:"spielte",fu:"wird spielen"},{i:"machen",pr:"machte",fu:"wird machen"},
+  {i:"lachen",pr:"lachte",fu:"wird lachen"},{i:"malen",pr:"malte",fu:"wird malen"},
+  {i:"lernen",pr:"lernte",fu:"wird lernen"},{i:"fragen",pr:"fragte",fu:"wird fragen"},
+  {i:"laufen",pr:"lief",fu:"wird laufen"},{i:"singen",pr:"sang",fu:"wird singen"},
+  {i:"lesen",pr:"las",fu:"wird lesen"},{i:"gehen",pr:"ging",fu:"wird gehen"},
+  {i:"fahren",pr:"fuhr",fu:"wird fahren"},{i:"trinken",pr:"trank",fu:"wird trinken"}
+];
+const STEIGER=[ // pos, komp, sup
+  {p:"schnell",k:"schneller",s:"am schnellsten"},{p:"klein",k:"kleiner",s:"am kleinsten"},
+  {p:"schön",k:"schöner",s:"am schönsten"},{p:"groß",k:"größer",s:"am größten"},
+  {p:"gut",k:"besser",s:"am besten"},{p:"hoch",k:"höher",s:"am höchsten"},
+  {p:"viel",k:"mehr",s:"am meisten"},{p:"nah",k:"näher",s:"am nächsten"}
+];
+const SAETZE_SUBJ=[ // Satz, Subjekt, Ablenker
+  {s:"Der Hund bellt laut.",sub:"Der Hund",o:["bellt","laut"]},
+  {s:"Die Kinder spielen im Garten.",sub:"Die Kinder",o:["spielen","im Garten"]},
+  {s:"Mein Bruder liest ein Buch.",sub:"Mein Bruder",o:["liest","ein Buch"]},
+  {s:"Die Sonne scheint hell.",sub:"Die Sonne",o:["scheint","hell"]},
+  {s:"Anna malt ein Bild.",sub:"Anna",o:["malt","ein Bild"]}
+];
+const FAELLE=[ // Satz, markiert, Fall
+  {s:"Der Hund bellt.",w:"Der Hund",f:"Nominativ"},
+  {s:"Ich sehe den Hund.",w:"den Hund",f:"Akkusativ"},
+  {s:"Ich gebe dem Hund einen Knochen.",w:"dem Hund",f:"Dativ"},
+  {s:"Das ist das Haus des Mannes.",w:"des Mannes",f:"Genitiv"}
+];
+const WOERTLICHE=[
+  {ok:"Anna sagt: „Ich komme gleich.“",no:"Anna sagt: Ich komme gleich."},
+  {ok:"„Wo bist du?“, fragt Tom.",no:"„Wo bist du?“ fragt Tom."},
+  {ok:"Papa ruft: „Das Essen ist fertig!“",no:"Papa ruft, Das Essen ist fertig!"}
+];
+const WORTFAMILIE=[
+  {f:"fahren",ja:["Fahrrad","Fahrer","Abfahrt"],nein:["Faden","Feder","Farbe"]},
+  {f:"spielen",ja:["Spieler","Spielzeug","Spielplatz"],nein:["Speer","spülen","Spinne"]},
+  {f:"Schule",ja:["Schüler","Schulhof","schulisch"],nein:["Schale","Schluss","Schnur"]}
+];
+const RECHT=[ // doppelter Mitlaut / Auslaut / ie / ß
+  ["Sonne","Sone"],["Roller","Roler"],["Sommer","Somer"],["Wasser","Waser"],["kommen","komen"],
+  ["Hund","Hunt"],["Korb","Korp"],["Hand","Hant"],["Berg","Berk"],["Weg","Wek"],
+  ["Liebe","Libe"],["spielen","spilen"],["Brief","Brif"],["Wiese","Wise"],
+  ["Straße","Strasse"],["groß","gros"],["Fuß","Fus"]
+];
+const GRUNDWORT=["Boden","Ding","Finger","Fisch","Flasche","Geschichte","Gesicht","Hals","Licht","Loch","Luft","Mensch","Milch","Nase","Sache","Seite","Stein","heute","reiten","schenken","springen"];
+
+/* ---------- HSU-Material (Sephis Themen, geprüft) ---------- */
+const HSU_NATUR=[
+  {type:"mc",q:"Welches Tier ist ein Wildtier?",o:["der Wolf","der Hund","die Katze"],c:0},
+  {type:"mc",q:"Was frisst das Eichhörnchen am liebsten?",o:["Nüsse","Fleisch","Gras"],c:0},
+  {type:"tf",q:"Der Igel ist ein Säugetier.",a:true},
+  {type:"mc",q:"Welcher Baum ist ein Nadelbaum?",o:["die Fichte","die Eiche","die Buche"],c:0},
+  {type:"mc",q:"Wie heißt die unterste Schicht im Wald?",o:["die Moosschicht","die Baumschicht","die Krautschicht"],c:0},
+  {type:"order",q:"Bringe die Entwicklung des Schmetterlings in die richtige Reihenfolge.",seq:["Ei","Raupe","Puppe","Falter"]},
+  {type:"tf",q:"Der Wald ist wichtig, weil er die Luft sauber hält.",a:true}
+];
+const HSU_FEUER=[
+  {type:"mc",q:"Was braucht ein Feuer NICHT zum Brennen?",o:["Wasser","Sauerstoff","Brennstoff"],c:0},
+  {type:"mc",q:"Was gehört zum Verbrennungsdreieck?",o:["Wärme","Kälte","Dunkelheit"],c:0},
+  {type:"mc",q:"Welche Nummer wählst du bei einem Brand?",o:["112","110","116"],c:0},
+  {type:"tf",q:"Eine Kerze unter einem Glas geht aus, weil der Sauerstoff verbraucht ist.",a:true},
+  {type:"mc",q:"Womit kann man ein kleines Feuer am besten löschen?",o:["mit Wasser","mit Öl","mit Papier"],c:0},
+  {type:"order",q:"Was tust du, wenn es brennt? Bringe in die richtige Reihenfolge.",seq:["in Sicherheit gehen","Notruf 112 wählen","Bescheid sagen, was brennt"]}
+];
+const HSU_WERTE=[
+  {type:"mc",q:"Was bedeutet Respekt?",o:["andere achten","andere ärgern","alles bekommen"],c:0},
+  {type:"mc",q:"Wie löst man einen Streit fair?",o:["einen Kompromiss finden","lauter schreien","weglaufen"],c:0},
+  {type:"mc",q:"Wie wird eine Klassensprecherin gewählt?",o:["geheim und frei","der Lehrer bestimmt","wer am lautesten ruft"],c:0},
+  {type:"tf",q:"In einer Gemeinschaft braucht man Regeln.",a:true},
+  {type:"mc",q:"Wer leitet eine Gemeinde?",o:["die Bürgermeisterin","die Lehrerin","der Busfahrer"],c:0}
+];
+
+/* ---------- Aufgaben-Generatoren ---------- */
+const G={
+  // MATHE
+  einmaleins(g){const a=R(2,10),b=R(2,10);if(Math.random()<.5)return{type:"input",q:`${a} · ${b} = ?`,a:[String(a*b)]};const p=a*b;return{type:"input",q:`${p} : ${a} = ?`,a:[String(b)]};},
+  analog(g){const a=R(2,9),b=R(2,9),f=g>=4?pick([10,100]):10;if(Math.random()<.5)return{type:"input",q:`${a*f} · ${b} = ?`,a:[String(a*f*b)]};return{type:"input",q:`${a} · ${b*f} = ?`,a:[String(a*b*f)]};},
+  schriftAdd(g){const m=g>=4?[1000,89999]:[100,799];const a=R(...m),b=R(...m);return{type:"input",q:`${a} + ${b} = ?`,a:[String(a+b)]};},
+  schriftSub(g){const m=g>=4?[10000,99999]:[300,999];let a=R(...m),b=R(m[0]/3|0,a-1);return{type:"input",q:`${a} − ${b} = ?`,a:[String(a-b)]};},
+  schriftMult(g){const a=R(102,989),b=R(2,9);return{type:"input",q:`${a} · ${b} = ?`,a:[String(a*b)]};},
+  schriftDiv(g){const d=R(2,9),q=R(21,callmax(g)),rest=R(0,d-1);const dd=d*q+rest;const ans=rest?`${q} R ${rest}`:`${q}`;const acc=rest?[`${q}R${rest}`,`${q}rest${rest}`]:[`${q}`];return{type:"input",q:`${dd} : ${d} = ?  (mit Rest)`,a:acc,sol:ans};},
+  stellenwert(g){if(g>=4){const t=R(1,9),h=R(0,9),z=R(0,9),e=R(0,9);return{type:"input",q:`${t} T  ${h} H  ${z} Z  ${e} E = ?`,a:[String(t*1000+h*100+z*10+e)]};}const h=R(1,9),z=R(0,9),e=R(0,9);return{type:"input",q:`${h} H  ${z} Z  ${e} E = ?`,a:[String(h*100+z*10+e)]};},
+  ordnen(g){const m=g>=4?100000:1000;const n=sample([R(0,m),R(0,m),R(0,m),R(0,m)],4);const max=Math.max(...n);return{type:"mc",q:"Welche Zahl ist am größten?",o:n.map(String),c:n.indexOf(max)};},
+  runden(g){const n=R(1230,98760);const st=pick(g>=4?[100,1000]:[10,100]);const r=Math.round(n/st)*st;return{type:"input",q:`Runde ${n} auf ${st===10?"Zehner":st===100?"Hunderter":"Tausender"}.`,a:[String(r)]};},
+  folge(g){const st=pick(g>=4?[25,50,100,250]:[2,5,10,25]);const a=R(1,9)*st;const arr=[a,a+st,a+2*st,a+3*st];return{type:"input",q:`Wie geht es weiter?  ${arr.join(", ")}, ___`,a:[String(a+4*st)]};},
+  groessen(g){const cs=[["km","m",1000],["m","cm",100],["kg","g",1000],["l","ml",1000],["h","min",60],["€","ct",100]];const c=pick(cs);const x=R(2,9);return{type:"input",q:`${x} ${c[0]} = ? ${c[1]}`,a:[String(x*c[2])]};},
+  sach(g){const t=R(1,3);if(t===1){const p=R(3,15),n=R(2,6);return{type:"input",q:`Ein Buch kostet ${p} €. Was kosten ${n} Bücher? (in €)`,a:[String(p*n)]};}if(t===2){const tot=R(20,50),pay=R(tot+5,80);return{type:"input",q:`Lena kauft für ${tot} € ein und zahlt mit ${pay} €. Wie viel bekommt sie zurück? (in €)`,a:[String(pay-tot)]};}const a=R(120,400),b=R(50,a-10);return{type:"input",q:`Im Bus sind ${a} Personen. ${b} steigen aus. Wie viele bleiben?`,a:[String(a-b)]};},
+  kombi(g){const a=R(2,4),b=R(2,4);return{type:"input",q:`Mia hat ${a} T-Shirts und ${b} Hosen. Wie viele verschiedene Kombinationen gibt es?`,a:[String(a*b)]};},
+  uhr(g){const h=R(7,18),m=pick([0,5,10,15,20,25,30,40,45,50]);const dur=pick([20,30,45,60,75,90]);const tot=h*60+m+dur;const eh=Math.floor(tot/60)%24,em=tot%60;return{type:"input",q:`Es ist ${h}:${String(m).padStart(2,"0")} Uhr. In ${dur} Minuten – wie spät ist es dann? (Uhrzeit)`,a:[`${eh}:${String(em).padStart(2,"0")}`,`${eh}.${String(em).padStart(2,"0")}`]};},
+  geometrieMC(g){return pick([
+    {type:"mc",q:"Wie viele Ecken hat ein Würfel?",o:["8","6","12"],c:0},
+    {type:"mc",q:"Welcher Körper hat 6 gleiche quadratische Flächen?",o:["der Würfel","die Kugel","der Zylinder"],c:0},
+    {type:"mc",q:"Wie nennt man den Winkel mit genau 90°?",o:["rechter Winkel","spitzer Winkel","stumpfer Winkel"],c:0},
+    {type:"tf",q:"Ein Quadrat hat vier gleich lange Seiten.",a:true},
+    {type:"mc",q:"Wie viele Spiegelachsen hat ein Quadrat?",o:["4","2","1"],c:0}
+  ]);},
+  datenMC(g){const a=R(10,30),b=R(10,30),c=R(10,30);const mx=Math.max(a,b,c);const names=["Montag","Dienstag","Mittwoch"];return{type:"mc",q:`Verkaufte Eis: Mo ${a}, Di ${b}, Mi ${c}. An welchem Tag wurde am meisten verkauft?`,o:names,c:[a,b,c].indexOf(mx)};},
+  // DEUTSCH
+  wortart(g){const r=Math.random();let w,c;if(r<.34){w=pick(NOMEN);c=0;}else if(r<.67){w=pick(VERBEN);c=1;}else{w=pick(ADJEKTIVE);c=2;}return{type:"mc",q:`Welche Wortart ist „${w}“?`,o:["Nomen","Verb","Adjektiv"],c};},
+  zeit(g){const v=pick(VERBFORMEN);if(g>=4&&Math.random()<.4)return{type:"input",q:`Setze in die Zukunft: Morgen ___ er. (${v.i})`,a:[norm(v.fu),v.fu.toLowerCase()]};return{type:"input",q:`Setze in die Mitvergangenheit: Gestern ___ er. (${v.i})`,a:[v.pr.toLowerCase(),norm(v.pr)]};},
+  satzglied(g){const s=pick(SAETZE_SUBJ);const o=shuffle([s.sub,...s.o]);return{type:"mc",q:`„${s.s}“ — Was ist der Satzgegenstand (Subjekt)?`,o,c:o.indexOf(s.sub)};},
+  faelle(g){const f=pick(FAELLE);return{type:"mc",q:`„${f.s}“ — In welchem Fall steht „${f.w}“?`,o:["Nominativ","Genitiv","Dativ","Akkusativ"],c:["Nominativ","Genitiv","Dativ","Akkusativ"].indexOf(f.f)};},
+  woertlich(g){const w=pick(WOERTLICHE);const o=shuffle([w.ok,w.no]);return{type:"mc",q:"Welcher Satz hat die wörtliche Rede richtig?",o,c:o.indexOf(w.ok)};},
+  steigern(g){const a=pick(STEIGER);if(Math.random()<.5)return{type:"input",q:`Steigere: ${a.p} — ___ (Mehrstufe)`,a:[a.k]};return{type:"input",q:`Steigere: ${a.p} — ${a.k} — ___ (Meiststufe)`,a:[a.s,a.s.replace("am ","")]};},
+  wortfamilie(g){const f=pick(WORTFAMILIE);const o=shuffle([pick(f.ja),pick(f.nein),pick(f.nein)]);const right=o.find(x=>f.ja.includes(x));return{type:"mc",q:`Welches Wort gehört zur Wortfamilie „${f.f}“?`,o,c:o.indexOf(right)};},
+  recht(g){const p=pick(RECHT);const o=shuffle([p[0],p[1]]);return{type:"mc",q:"Wie schreibt man richtig?",o,c:o.indexOf(p[0])};},
+  abc(g){const w=sample(GRUNDWORT,3);const first=w.slice().sort((a,b)=>a.localeCompare(b,"de"))[0];return{type:"mc",q:"Welches Wort steht im Wörterbuch zuerst (alphabetisch)?",o:w,c:w.indexOf(first)};},
+  grossklein(g){const o=shuffle([pick(NOMEN),pick(VERBEN),pick(ADJEKTIVE)]);const right=o.find(x=>NOMEN.includes(x));return{type:"mc",q:"Welches Wort schreibt man groß (Nomen)?",o,c:o.indexOf(right)};},
+  // HSU
+  hsuNatur(){return pick(HSU_NATUR);},
+  hsuFeuer(){return pick(HSU_FEUER);},
+  hsuWerte(){return pick(HSU_WERTE);}
+};
+function callmax(g){return g>=4?900:90;}
+
+/* ---------- Skill-Register (Mikro-Lernziele) ----------
+   rate: Probenwahrscheinlichkeit 3=fast immer, 2=häufig, 1=gelegentlich  */
+const SUBJECTS={
+  mathe:{name:"Mathematik",flower:"🌸",cls:"mathe"},
+  deutsch:{name:"Deutsch",flower:"🌷",cls:"deutsch"},
+  hsu:{name:"HSU",flower:"🌻",cls:"hsu"}
+};
+const TOPICS={
+  m_zahlen:{sub:"mathe",name:"Zahlen & Rechnen"},
+  m_schriftlich:{sub:"mathe",name:"Schriftliches Rechnen"},
+  m_groessen:{sub:"mathe",name:"Größen & Sachrechnen"},
+  m_geometrie:{sub:"mathe",name:"Raum & Form"},
+  m_daten:{sub:"mathe",name:"Daten & Zufall"},
+  d_wortarten:{sub:"deutsch",name:"Wortarten & Zeiten"},
+  d_satz:{sub:"deutsch",name:"Satzglieder & Fälle"},
+  d_recht:{sub:"deutsch",name:"Richtig schreiben"},
+  d_woerter:{sub:"deutsch",name:"Wörter & Sprache"},
+  h_natur:{sub:"hsu",name:"Tiere & Wald"},
+  h_feuer:{sub:"hsu",name:"Feuer"},
+  h_werte:{sub:"hsu",name:"Werte & Zusammenleben"}
+};
+const SKILLS=[
+  // Mathe
+  {id:"einmaleins",t:"m_zahlen",name:"Einmaleins",g:[3,4],rate:3,gen:G.einmaleins},
+  {id:"analog",t:"m_zahlen",name:"Im Kopf rechnen",g:[3,4],rate:3,gen:G.analog},
+  {id:"ordnen",t:"m_zahlen",name:"Zahlen ordnen",g:[3,4],rate:2,gen:G.ordnen},
+  {id:"stellenwert",t:"m_zahlen",name:"Stellenwert",g:[3,4],rate:2,gen:G.stellenwert},
+  {id:"runden",t:"m_zahlen",name:"Runden",g:[4],rate:2,gen:G.runden},
+  {id:"folge",t:"m_zahlen",name:"Zahlenfolgen",g:[3,4],rate:2,gen:G.folge},
+  {id:"sadd",t:"m_schriftlich",name:"Schriftlich +",g:[3,4],rate:3,gen:G.schriftAdd},
+  {id:"ssub",t:"m_schriftlich",name:"Schriftlich −",g:[3,4],rate:3,gen:G.schriftSub},
+  {id:"smul",t:"m_schriftlich",name:"Schriftlich ·",g:[4],rate:3,gen:G.schriftMult},
+  {id:"sdiv",t:"m_schriftlich",name:"Schriftlich :",g:[4],rate:3,gen:G.schriftDiv},
+  {id:"groessen",t:"m_groessen",name:"Größen umwandeln",g:[3,4],rate:3,gen:G.groessen},
+  {id:"sach",t:"m_groessen",name:"Sachaufgaben",g:[3,4],rate:3,gen:G.sach},
+  {id:"uhr",t:"m_groessen",name:"Uhrzeit & Zeit",g:[3,4],rate:2,gen:G.uhr},
+  {id:"geo",t:"m_geometrie",name:"Formen & Körper",g:[3,4],rate:2,gen:G.geometrieMC},
+  {id:"kombi",t:"m_daten",name:"Kombinieren",g:[3,4],rate:1,gen:G.kombi},
+  {id:"daten",t:"m_daten",name:"Tabellen lesen",g:[3,4],rate:2,gen:G.datenMC},
+  // Deutsch
+  {id:"wortart",t:"d_wortarten",name:"Wortarten",g:[3,4],rate:3,gen:G.wortart},
+  {id:"zeit",t:"d_wortarten",name:"Zeitformen",g:[3,4],rate:3,gen:G.zeit},
+  {id:"steigern",t:"d_wortarten",name:"Steigern",g:[3,4],rate:1,gen:G.steigern},
+  {id:"satzglied",t:"d_satz",name:"Satzglieder",g:[3,4],rate:2,gen:G.satzglied},
+  {id:"faelle",t:"d_satz",name:"Die vier Fälle",g:[4],rate:2,gen:G.faelle},
+  {id:"woertlich",t:"d_satz",name:"Wörtliche Rede",g:[3,4],rate:2,gen:G.woertlich},
+  {id:"recht",t:"d_recht",name:"Rechtschreibung",g:[3,4],rate:3,gen:G.recht},
+  {id:"abc",t:"d_recht",name:"ABC ordnen",g:[3,4],rate:2,gen:G.abc},
+  {id:"grossklein",t:"d_recht",name:"Groß & klein",g:[3,4],rate:2,gen:G.grossklein},
+  {id:"wortfam",t:"d_woerter",name:"Wortfamilien",g:[3,4],rate:2,gen:G.wortfamilie},
+  // HSU
+  {id:"natur",t:"h_natur",name:"Tiere & Wald",g:[3,4],rate:2,gen:G.hsuNatur},
+  {id:"feuer",t:"h_feuer",name:"Feuer",g:[3,4],rate:2,gen:G.hsuFeuer},
+  {id:"werte",t:"h_werte",name:"Werte",g:[3,4],rate:1,gen:G.hsuWerte}
+];
+const SKILL=Object.fromEntries(SKILLS.map(s=>[s.id,s]));
+function topicsOf(sub){return Object.entries(TOPICS).filter(([id,t])=>t.sub===sub).map(([id])=>id);}
+function skillsOfTopic(tid){return SKILLS.filter(s=>s.t===tid);}
+
+/* ---------- Zustand ---------- */
+const KEY="bluetenflug_v2";
+const TARGET=10, OWED_CAP=3, BOX_INT=[0,0,1,2,4,7];
+let STATE=load();
+
+function today(d){d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function pdate(s){const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);}
+function addDays(s,n){const d=pdate(s);d.setDate(d.getDate()+n);return today(d);}
+function isWeekday(s){const g=pdate(s).getDay();return g>=1&&g<=5;}
+function daysUntil(s){return Math.round((pdate(s)-pdate(today()))/86400000);}
+
+function defState(){
+  const sk={};SKILLS.forEach(s=>sk[s.id]={box:0,due:today(),seen:0,correct:0});
+  const owed={},last={};["mathe","deutsch","hsu"].forEach(s=>{owed[s]=0;last[s]="";});
+  return{sk,owed,last,gen:"",grade:3,probe:null,gaps:[],created:today()};
+}
+function load(){try{const r=localStorage.getItem(KEY);if(!r)return defState();const s=JSON.parse(r);
+  SKILLS.forEach(k=>{if(!s.sk[k.id])s.sk[k.id]={box:0,due:today(),seen:0,correct:0};});
+  if(s.grade==null)s.grade=3;if(!s.gaps)s.gaps=[];return s;}catch(e){return defState();}}
+function save(){localStorage.setItem(KEY,JSON.stringify(STATE));}
+
+function rollover(){
+  const t=today();if(STATE.gen===t)return;
+  if(!STATE.gen){if(isWeekday(t))["mathe","deutsch","hsu"].forEach(s=>STATE.owed[s]=1);STATE.gen=t;save();return;}
+  let cur=addDays(STATE.gen,1),guard=0;
+  while(cur<=t&&guard<31){if(isWeekday(cur))["mathe","deutsch","hsu"].forEach(s=>STATE.owed[s]=Math.min(OWED_CAP,STATE.owed[s]+1));cur=addDays(cur,1);guard++;}
+  STATE.gen=t;save();
+}
+
+/* ---------- Herz-Modell ---------- */
+function gradeOK(s){return s.g.includes(STATE.grade);}
+function skillMastery(id){return Math.max(0,Math.min(1,STATE.sk[id].box/5));}
+function topicMastery(tid){const ks=skillsOfTopic(tid).filter(gradeOK);if(!ks.length)return 0;return ks.reduce((a,s)=>a+skillMastery(s.id),0)/ks.length;}
+function subjectMastery(sub){const ts=topicsOf(sub);return ts.reduce((a,t)=>a+topicMastery(t),0)/ts.length;}
+// rechte Kammer: Vorhersage-Priorität
+function recencyBoost(tid){
+  if(STATE.probe&&STATE.probe.topics&&STATE.probe.topics.includes(tid)){const d=daysUntil(STATE.probe.date);if(d>=0&&d<=10)return 2.6;}
+  if(STATE.gaps.includes(tid))return 1.5;
+  return 1;
+}
+function skillPriority(id){const s=SKILL[id];return s.rate*recencyBoost(s.t);}
+function topicPriority(tid){const ks=skillsOfTopic(tid).filter(gradeOK);if(!ks.length)return 0;return ks.reduce((a,s)=>a+skillPriority(s.id),0)/ks.length;}
+// Verbindung: heutiger Fokus
+function focusScore(id){const s=SKILL[id];const due=STATE.sk[id].due<=today()?1.5:1;return skillPriority(id)*(1.15-skillMastery(id))*due*(0.85+Math.random()*0.3);}
+
+function buildQueue(sub){
+  const ks=SKILLS.filter(s=>s.t&&TOPICS[s.t].sub===sub&&gradeOK(s));
+  const ranked=ks.map(s=>({id:s.id,sc:focusScore(s.id)})).sort((a,b)=>b.sc-a.sc);
+  // Interleaving: über Themen mischen
+  const byTopic={};ranked.forEach(r=>{const t=SKILL[r.id].t;(byTopic[t]=byTopic[t]||[]).push(r.id);});
+  const lists=Object.values(byTopic),out=[];let i=0;
+  while(out.length<TARGET&&lists.some(l=>l.length)){const l=lists[i%lists.length];if(l.length)out.push(l.shift());i++;}
+  return out.slice(0,TARGET);
+}
+
+function grade(id,ok){const st=STATE.sk[id];st.seen++;if(ok){st.correct++;st.box=Math.min(5,(st.box||1)+1);if(st.box<1)st.box=1;}else st.box=1;
+  st.due=addDays(today(),BOX_INT[st.box]??1);save();}
+
+/* ---------- Grafik ---------- */
+function sephiSVG(){return `<svg viewBox="-62 -66 124 132" width="100%" height="100%">
+<ellipse class="wing-l" cx="-32" cy="-28" rx="18" ry="26" fill="#CDEBF8" stroke="#A9D8EE" stroke-width="2"/>
+<ellipse class="wing-r" cx="32" cy="-28" rx="18" ry="26" fill="#CDEBF8" stroke="#A9D8EE" stroke-width="2"/>
+<path d="M-34 12 q-8 6 -9 13" stroke="#2B2622" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="-44" cy="27" r="4.5" fill="#FBC02D" stroke="#2B2622" stroke-width="2"/>
+<path d="M34 12 q8 6 9 13" stroke="#2B2622" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="44" cy="27" r="4.5" fill="#FBC02D" stroke="#2B2622" stroke-width="2"/>
+<ellipse cx="-15" cy="47" rx="9" ry="6" fill="#2B2622"/><ellipse cx="15" cy="47" rx="9" ry="6" fill="#2B2622"/>
+<ellipse cx="0" cy="4" rx="38" ry="40" fill="#FBC02D"/>
+<rect x="-29" y="22" width="58" height="9" rx="4.5" fill="#2B2622"/><rect x="-21" y="33" width="42" height="8" rx="4" fill="#2B2622"/>
+<circle cx="-25" cy="7" r="6" fill="#FF9BB0" opacity="0.85"/><circle cx="25" cy="7" r="6" fill="#FF9BB0" opacity="0.85"/>
+<path d="M-19 -3 Q-12 -12 -5 -3" fill="none" stroke="#2B2622" stroke-width="3" stroke-linecap="round"/>
+<path d="M5 -3 Q12 -12 19 -3" fill="none" stroke="#2B2622" stroke-width="3" stroke-linecap="round"/>
+<path d="M-9 8 Q0 20 9 8" fill="none" stroke="#2B2622" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="-11" y1="-34" x2="-19" y2="-52" stroke="#2B2622" stroke-width="3" stroke-linecap="round"/><line x1="11" y1="-34" x2="19" y2="-52" stroke="#2B2622" stroke-width="3" stroke-linecap="round"/>
+<circle cx="-20" cy="-54" r="4" fill="#2B2622"/><circle cx="20" cy="-54" r="4" fill="#2B2622"/>
+<g transform="translate(-27,-20)"><circle cx="0" cy="-3.4" r="3.4" fill="#FF8FB0"/><circle cx="3.8" cy="-1.2" r="3.4" fill="#FF8FB0"/><circle cx="2.3" cy="3.4" r="3.4" fill="#FF8FB0"/><circle cx="-2.3" cy="3.4" r="3.4" fill="#FF8FB0"/><circle cx="-3.8" cy="-1.2" r="3.4" fill="#FF8FB0"/><circle cx="0" cy="0" r="2.5" fill="#F4E600"/></g>
+<g transform="translate(-15,-29)"><circle cx="0" cy="-3.4" r="3.4" fill="#9B8CCE"/><circle cx="3.8" cy="-1.2" r="3.4" fill="#9B8CCE"/><circle cx="2.3" cy="3.4" r="3.4" fill="#9B8CCE"/><circle cx="-2.3" cy="3.4" r="3.4" fill="#9B8CCE"/><circle cx="-3.8" cy="-1.2" r="3.4" fill="#9B8CCE"/><circle cx="0" cy="0" r="2.5" fill="#F4E600"/></g>
+<g transform="translate(0,-33)"><circle cx="0" cy="-3.8" r="3.8" fill="#74C9E5"/><circle cx="4.2" cy="-1.3" r="3.8" fill="#74C9E5"/><circle cx="2.6" cy="3.8" r="3.8" fill="#74C9E5"/><circle cx="-2.6" cy="3.8" r="3.8" fill="#74C9E5"/><circle cx="-4.2" cy="-1.3" r="3.8" fill="#74C9E5"/><circle cx="0" cy="0" r="2.8" fill="#F4E600"/></g>
+<g transform="translate(15,-29)"><circle cx="0" cy="-3.4" r="3.4" fill="#FBBB2D"/><circle cx="3.8" cy="-1.2" r="3.4" fill="#FBBB2D"/><circle cx="2.3" cy="3.4" r="3.4" fill="#FBBB2D"/><circle cx="-2.3" cy="3.4" r="3.4" fill="#FBBB2D"/><circle cx="-3.8" cy="-1.2" r="3.4" fill="#FBBB2D"/><circle cx="0" cy="0" r="2.5" fill="#fff"/></g>
+<g transform="translate(27,-20)"><circle cx="0" cy="-3.4" r="3.4" fill="#FF8FB0"/><circle cx="3.8" cy="-1.2" r="3.4" fill="#FF8FB0"/><circle cx="2.3" cy="3.4" r="3.4" fill="#FF8FB0"/><circle cx="-2.3" cy="3.4" r="3.4" fill="#FF8FB0"/><circle cx="-3.8" cy="-1.2" r="3.4" fill="#FF8FB0"/><circle cx="0" cy="0" r="2.5" fill="#F4E600"/></g>
+</svg>`;}
+function jarSVG(pct){const p=Math.max(0,Math.min(1,pct));const top=64,bottom=104,h=bottom-top,fh=Math.round(h*p),fy=bottom-fh;const id="c"+Math.random().toString(36).slice(2,7);
+return `<svg viewBox="0 0 80 116" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="${id}"><path d="M16 60 q0 -4 4 -4 h40 q4 0 4 4 v40 q0 8 -8 8 h-32 q-8 0 -8 -8 z"/></clipPath></defs>
+<rect x="22" y="44" width="36" height="12" rx="4" fill="#c98f2e"/><rect x="18" y="40" width="44" height="9" rx="4" fill="#e0a83c"/>
+<g clip-path="url(#${id})"><rect x="14" y="56" width="52" height="56" fill="#fbf3df"/><rect x="14" y="${fy}" width="52" height="${fh}" fill="#f3b424"/><rect x="14" y="${fy}" width="52" height="5" fill="#e8a317" opacity=".6"/></g>
+<path d="M16 60 q0 -4 4 -4 h40 q4 0 4 4 v40 q0 8 -8 8 h-32 q-8 0 -8 -8 z" fill="none" stroke="#d9a23a" stroke-width="3"/>${p>=1?'<text x="40" y="92" font-size="20" text-anchor="middle">⭐</text>':''}</svg>`;}
+
+/* ---------- Navigation ---------- */
+const $=s=>document.querySelector(s);
+const screens={home:$("#home"),session:$("#session"),done:$("#done"),eltern:$("#eltern")};
+function show(n){Object.values(screens).forEach(s=>s.classList.add("hidden"));screens[n].classList.remove("hidden");window.scrollTo(0,0);}
+
+function renderHome(){
+  $("#headbee").innerHTML=sephiSVG();$("#sessionbee").innerHTML=sephiSVG();$("#donebee").innerHTML=sephiSVG();
+  // Sephi-Flugband
+  $("#sephiband").innerHTML=`<div class="grass"></div>
+    <div class="fl" style="left:60px">🌸</div><div class="fl" style="left:250px">🌷</div><div class="fl" style="left:440px">🌻</div><div class="fl" style="left:620px">🌼</div>
+    <div class="sflight"><div class="sbob">${sephiSVG()}</div></div>`;
+  // Probe-Radar
+  const t=today();let banner="";
+  if(STATE.probe&&STATE.probe.sub){const d=daysUntil(STATE.probe.date);
+    if(d>=0)banner=`<div class="probe-banner">📣 ${SUBJECTS[STATE.probe.sub].name}-Probe in ${d===0?"heute":d+" Tag"+(d>1?"en":"")} – Sephi übt die angekündigten Themen vor.</div>`;}
+  $("#probebanner").innerHTML=banner;
+  const pred=$("#predictions");pred.innerHTML="";
+  ["mathe","deutsch","hsu"].forEach(sub=>{
+    const tops=topicsOf(sub).map(tid=>({tid,p:topicPriority(tid)})).sort((a,b)=>b.p-a.p).slice(0,2);
+    const chips=tops.map(o=>{const boost=recencyBoost(o.tid)>1.4;return `<span class="chip">${boost?"<b>":""}${TOPICS[o.tid].name}${boost?"</b>":""}</span>`;}).join("");
+    pred.insertAdjacentHTML("beforeend",`<div style="margin:6px 0 2px;font-size:.8rem;color:var(--muted);font-weight:700">${SUBJECTS[sub].flower} ${SUBJECTS[sub].name} – wahrscheinlich dran:</div><div class="pred">${chips}</div>`);
+  });
+  // Wiesen
+  const mw=$("#meadows");mw.innerHTML="";
+  ["mathe","deutsch","hsu"].forEach(sub=>{
+    const owed=STATE.owed[sub],doneToday=STATE.last[sub]===t&&owed===0;
+    const probe=STATE.probe&&STATE.probe.sub===sub&&daysUntil(STATE.probe.date)>=0;
+    const el=document.createElement("div");el.className="meadow "+SUBJECTS[sub].cls+(doneToday?" done":"");
+    el.innerHTML=`<div class="flower">${SUBJECTS[sub].flower}</div>
+      <div class="m-info"><h3>${SUBJECTS[sub].name}${owed>0?`<span class="badge-owed">${owed} offen</span>`:""}${probe?'<span class="badge-probe">Probe</span>':""}</h3>
+      <div class="prog">Honig: ${Math.round(subjectMastery(sub)*100)}%</div></div>
+      <div class="go"><button data-sub="${sub}">${doneToday?"Nochmal":"Sammeln"}</button></div>`;
+    mw.appendChild(el);
+  });
+  // Englisch (Kür, bald)
+  mw.insertAdjacentHTML("beforeend",`<div class="meadow englisch soon"><div class="flower">🦋</div><div class="m-info"><h3>Englisch <span class="pill">bald</span></h3><div class="prog">Spielerisch – kommt als Kür dazu</div></div><div class="go"><button disabled style="opacity:.5">bald</button></div></div>`);
+  mw.querySelectorAll("button[data-sub]").forEach(b=>b.onclick=()=>startSession(b.dataset.sub));
+  // Regale
+  const sh=$("#shelves");sh.innerHTML="";
+  ["mathe","deutsch","hsu"].forEach(sub=>{
+    const tps=topicsOf(sub).filter(tid=>skillsOfTopic(tid).some(gradeOK));
+    if(!tps.length)return;
+    const title=document.createElement("div");title.className="shelf-title";title.innerHTML=`${SUBJECTS[sub].flower} ${SUBJECTS[sub].name}`;
+    const jars=document.createElement("div");jars.className="jars";
+    tps.forEach(tid=>{const p=topicMastery(tid);const j=document.createElement("div");j.className="jar";
+      j.innerHTML=`${jarSVG(p)}<div class="jlabel">${TOPICS[tid].name}</div><div class="jpct">${Math.round(p*100)}%</div>`;jars.appendChild(j);});
+    sh.appendChild(title);sh.appendChild(jars);
+  });
+}
+
+/* ---------- Session ---------- */
+let SESS=null;
+function startSession(sub,placement){
+  let queue;
+  if(placement){queue=SKILLS.filter(s=>TOPICS[s.t].sub===sub&&gradeOK(s)).map(s=>s.id);}
+  else queue=buildQueue(sub);
+  SESS={sub,queue,pos:0,answered:0,correct:0,target:queue.length,placement:!!placement,ex:null,locked:false};
+  show("session");renderQ();
+}
+const FLOWERS=["🌼","🌷","🌻","🌸","💐","🌺","🏵️"];
+function bar(){$("#nectarfill").style.width=(SESS.target?Math.round(SESS.answered/SESS.target*100):0)+"%";}
+function renderQ(){
+  bar();$("#feedback").textContent="";$("#feedback").className="feedback";
+  $("#nextbtn").classList.add("hidden");$("#checkbtn").classList.add("hidden");SESS.locked=false;
+  if(SESS.pos>=SESS.queue.length){endSession();return;}
+  $("#flowerfield").textContent=FLOWERS[SESS.pos%FLOWERS.length];
+  const id=SESS.queue[SESS.pos];const sk=SKILL[id];
+  const ex=sk.gen(STATE.grade);SESS.ex={id,ex};
+  $("#qtag").textContent=sk.name;$("#qtext").textContent=ex.q;
+  const az=$("#answerzone");az.innerHTML="";
+  if(ex.type==="mc"){const w=document.createElement("div");w.className="options";
+    ex.o.forEach((o,i)=>{const b=document.createElement("button");b.className="opt";b.textContent=o;b.onclick=()=>answerMC(b,i,ex,w);w.appendChild(b);});az.appendChild(w);}
+  else if(ex.type==="tf"){const w=document.createElement("div");w.className="options";
+    [["Richtig",true],["Falsch",false]].forEach(([l,v])=>{const b=document.createElement("button");b.className="opt";b.textContent=l;b.onclick=()=>answerTF(b,v,ex,w);w.appendChild(b);});az.appendChild(w);}
+  else if(ex.type==="order"){renderOrder(az,ex);}
+  else{const row=document.createElement("div");row.className="answerrow";const inp=document.createElement("input");
+    inp.type="text";inp.autocomplete="off";inp.autocapitalize="off";inp.spellcheck=false;inp.setAttribute("inputmode","text");inp.id="ansinp";
+    inp.onkeydown=e=>{if(e.key==="Enter")checkInput(ex);};row.appendChild(inp);az.appendChild(row);
+    $("#checkbtn").classList.remove("hidden");$("#checkbtn").onclick=()=>checkInput(ex);setTimeout(()=>inp.focus(),60);}
+}
+function lock(w){w&&w.querySelectorAll(".opt").forEach(b=>b.disabled=true);}
+function after(ok,sol){SESS.answered++;if(ok)SESS.correct++;const fb=$("#feedback");
+  if(ok){fb.textContent="Süß! Nektar gesammelt 🍯";fb.className="feedback good";honeyDrop();}
+  else{fb.className="feedback bad";fb.innerHTML="Fast! "+(sol?`<span class="sol">Richtig: ${sol}</span>`:"");}
+  bar();$("#nextbtn").classList.remove("hidden");$("#checkbtn").classList.add("hidden");}
+function answerMC(b,i,ex,w){if(SESS.locked)return;SESS.locked=true;lock(w);const ok=i===ex.c;w.children[ex.c].classList.add("correct");if(!ok)b.classList.add("wrong");grade(SESS.ex.id,ok);after(ok,ex.o[ex.c]);}
+function answerTF(b,v,ex,w){if(SESS.locked)return;SESS.locked=true;lock(w);const ok=v===ex.a;const lbl=ex.a?"Richtig":"Falsch";w.querySelectorAll(".opt").forEach(x=>{if(x.textContent===lbl)x.classList.add("correct");});if(!ok)b.classList.add("wrong");grade(SESS.ex.id,ok);after(ok,lbl);}
+function checkInput(ex){if(SESS.locked)return;const inp=$("#ansinp");const g=norm(inp.value);if(g==="")return;SESS.locked=true;
+  const ok=ex.a.some(a=>norm(a)===g);inp.disabled=true;inp.style.borderColor=ok?"var(--good)":"var(--bad)";grade(SESS.ex.id,ok);after(ok,ex.sol||ex.a[0]);}
+function renderOrder(az,ex){const correct=ex.seq;const chosen=[];const pool=document.createElement("div");pool.className="orderpool";
+  shuffle(correct).forEach(item=>{const c=document.createElement("button");c.className="ochip";c.textContent=item;
+    c.onclick=()=>{if(SESS.locked||c.classList.contains("chosen"))return;chosen.push(item);c.classList.add("chosen");c.querySelector(".num")||c.insertAdjacentHTML("afterbegin",`<span class="num">${chosen.length}</span>`);
+      if(chosen.length===correct.length){SESS.locked=true;const ok=chosen.every((x,i)=>x===correct[i]);grade(SESS.ex.id,ok);after(ok,correct.join(" → "));}};
+    pool.appendChild(c);});az.appendChild(pool);
+  const hint=document.createElement("div");hint.style.cssText="font-size:.8rem;color:var(--muted);margin-top:8px";hint.textContent="Tippe der Reihe nach an.";az.appendChild(hint);}
+function honeyDrop(){const st=$(".stage");const d=document.createElement("div");d.className="drop";d.textContent="🍯";st.appendChild(d);setTimeout(()=>d.remove(),820);}
+$("#nextbtn").onclick=()=>{SESS.pos++;renderQ();};
+$("#quitbtn").onclick=()=>{if(SESS&&!SESS.placement&&SESS.answered>0)finishOwed();show("home");renderHome();};
+function finishOwed(){const t=today();STATE.last[SESS.sub]=t;STATE.owed[SESS.sub]=Math.max(0,STATE.owed[SESS.sub]-1);save();}
+function endSession(){
+  if(!SESS.placement)finishOwed();
+  const amount=SESS.target?Math.min(1,SESS.answered/SESS.target):0;const sweet=SESS.answered?SESS.correct/SESS.answered:0;
+  $("#jar-amount").innerHTML=jarSVG(amount);$("#jar-sweet").innerHTML=jarSVG(sweet);
+  $("#donetitle").textContent=SESS.placement?"Schnupperflug fertig!":"Blütenflug geschafft!";
+  let praise=sweet>=.85?"Wow, der Honig ist richtig süß geworden!":sweet>=.5?"Schön gesammelt – ein paar Blüten warten noch.":"Gut, dass du geübt hast. Morgen schmeckt der Honig süßer!";
+  $("#donemsg").textContent=`Du hast ${SESS.correct} von ${SESS.answered} Aufgaben süß gemacht. ${praise}`;
+  show("done");
+}
+$("#backhome").onclick=()=>{show("home");renderHome();};
+
+/* ---------- Eltern-Bereich ---------- */
+$("#elternbtn").onclick=()=>{renderEltern();show("eltern");};
+$("#elternback").onclick=()=>{show("home");renderHome();};
+function renderEltern(){
+  $("#gradesel").value=STATE.grade;
+  $("#gradesel").onchange=e=>{STATE.grade=Number(e.target.value);save();};
+  // Probe-Formular
+  const ps=$("#probesub");ps.value=STATE.probe?STATE.probe.sub:"";
+  $("#probedate").value=STATE.probe?STATE.probe.date:"";
+  function fillProbeTopics(){const sub=ps.value;const box=$("#probetopics");box.innerHTML="";
+    if(!sub)return;topicsOf(sub).filter(tid=>skillsOfTopic(tid).some(gradeOK)).forEach(tid=>{
+      const checked=STATE.probe&&STATE.probe.topics&&STATE.probe.topics.includes(tid);
+      box.insertAdjacentHTML("beforeend",`<label><input type="checkbox" value="${tid}" ${checked?"checked":""}>${TOPICS[tid].name}</label>`);});}
+  ps.onchange=fillProbeTopics;fillProbeTopics();
+  $("#saveprobe").onclick=()=>{const sub=ps.value;if(!sub){STATE.probe=null;save();alert("Probe gelöscht.");renderEltern();return;}
+    const topics=[...$("#probetopics").querySelectorAll("input:checked")].map(i=>i.value);
+    STATE.probe={sub,date:$("#probedate").value||today(),topics};save();alert("Probe gespeichert. Sephi übt diese Themen vor.");};
+  // Schwächen
+  const gt=$("#gaptopics");gt.innerHTML="";
+  Object.keys(TOPICS).filter(tid=>skillsOfTopic(tid).some(gradeOK)).forEach(tid=>{
+    gt.insertAdjacentHTML("beforeend",`<label><input type="checkbox" value="${tid}" ${STATE.gaps.includes(tid)?"checked":""}>${SUBJECTS[TOPICS[tid].sub].flower} ${TOPICS[tid].name}</label>`);});
+  $("#savegaps").onclick=()=>{STATE.gaps=[...gt.querySelectorAll("input:checked")].map(i=>i.value);
+    STATE.gaps.forEach(tid=>skillsOfTopic(tid).forEach(s=>{STATE.sk[s.id].box=Math.min(STATE.sk[s.id].box,1);STATE.sk[s.id].due=today();}));save();alert("Schwächen eingetragen – diese Themen werden verstärkt geübt.");};
+  // Lernstandserhebung
+  document.querySelectorAll("button[data-place]").forEach(b=>b.onclick=()=>startSession(b.dataset.place,true));
+}
+$("#resetbtn").onclick=()=>{if(confirm("Wirklich allen Honig und Fortschritt löschen?")){STATE=defState();save();renderEltern();}};
+
+/* ---------- PWA-Manifest ---------- */
+(function(){const m={name:"Sephis Blütenflug",short_name:"Blütenflug",display:"standalone",background_color:"#fff7e0",theme_color:"#f6c343",start_url:".",
+  icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f6c343'/%3E%3Cellipse cx='32' cy='36' rx='15' ry='17' fill='%23222'/%3E%3C/svg%3E",sizes:"any",type:"image/svg+xml"}]};
+  const b=new Blob([JSON.stringify(m)],{type:"application/manifest+json"});const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(b);document.head.appendChild(l);})();
+
+rollover();renderHome();show("home");
+</script>
+</body>
+</html>
