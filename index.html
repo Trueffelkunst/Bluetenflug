@@ -130,13 +130,15 @@
   .field{margin:10px 0;}
   .field label{display:block;font-weight:700;font-size:.9rem;margin-bottom:4px;}
   .field input,.field select{width:100%;font-family:inherit;font-size:1rem;padding:10px;border-radius:12px;border:2px solid #efe6d4;background:#fffdf8;-webkit-user-select:text;user-select:text;}
-  .checks{display:flex;flex-wrap:wrap;gap:8px;}
-  .checks label{display:flex;align-items:center;gap:6px;background:#fff;border:2px solid #efe6d4;border-radius:12px;padding:8px 10px;font-size:.9rem;font-weight:600;}
+  .checks{display:flex;flex-direction:column;gap:6px;}
+  .checks label{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #efe6d4;border-radius:10px;padding:9px 11px;font-size:.9rem;font-weight:600;line-height:1.2;}
+  .checks input{flex:none;width:18px;height:18px;margin:0;}
   .footer-note{text-align:center;color:var(--muted);font-size:.74rem;margin-top:18px;line-height:1.5;}
   .pill{display:inline-block;background:#fff5da;border:1px solid #f0dca0;color:#a87b14;border-radius:999px;padding:3px 10px;font-size:.72rem;font-weight:700;margin:2px;}
   .navrow{display:flex;gap:8px;margin-top:10px;}
   .navrow .btn{font-size:.95rem;padding:12px;}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -259,10 +261,10 @@
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0">📷 Letzte Probe nachtragen</h3>
-    <div class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Tippe an, was noch nicht sicher saß – diese Themen werden verstärkt geübt. (Eingescannte Proben werte ich im Chat aus und ergänze passende Aufgaben.)</div>
-    <div class="field"><label>Themen mit Schwächen</label><div class="checks" id="gaptopics"></div></div>
-    <button class="btn secondary" id="savegaps">Schwächen eintragen</button>
+    <h3 style="margin-top:0">🎯 Übungsschwerpunkte</h3>
+    <div class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:10px">Schwächen erkennt Sephi automatisch – aus dem täglichen Üben und aus eingescannten Proben (Knopf „… ins Üben übernehmen" oben in der Nachbewertung). Hier kannst du Themen zusätzlich von Hand an- oder abwählen; angehakte Themen werden verstärkt geübt.</div>
+    <div class="checks" id="gaptopics"></div>
+    <button class="btn secondary" id="savegaps" style="margin-top:10px">Auswahl speichern</button>
   </div>
 
   <div class="card">
@@ -278,8 +280,11 @@
     <h3 style="margin-top:0">📷 Probe einscannen & nachbewerten</h3>
     <div class="sub" style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Für eine vollständige Nachkorrektur fotografierst du die Schulaufgabe und lädst sie im Chat hoch – ich prüfe jede Aufgabe nach dem offiziellen Bewertungsschema, vergebe die Note nach dem bayerischen Grundschul-Notenschlüssel und sage dir, ob die Note der Lehrkraft passt. Bei Hörtests finde ich meist die Transkription des Hörtextes. Unten der schnelle Punkterechner für die reine Notenkontrolle. Noten erscheinen nur hier im Eltern-Bereich.</div>
     <input type="file" id="scanFiles" accept="image/*,application/pdf" multiple style="margin-bottom:8px">
+    <div id="scanInfo" style="font-size:.85rem;margin:4px 0;font-weight:700"></div>
+    <div id="scanPreview" style="margin:6px 0"></div>
     <button class="btn" id="scanBtn">Mit KI nachbewerten</button>
     <div id="scanResult" style="margin-top:10px;white-space:pre-wrap;font-size:.9rem;line-height:1.4"></div>
+    <div id="scanApply" style="margin-top:8px"></div>
     <div style="border-top:1px solid #efe6d4;margin:14px 0 8px"></div>
     <div style="font-weight:700;font-size:.9rem;margin-bottom:6px">Oder schnelle Notenkontrolle (nur Punkte):</div>
     <div class="field"><label>Erreichte Punkte</label><input type="number" id="pPoints" inputmode="decimal" step="0.5"></div>
@@ -300,6 +305,7 @@
   </div>
 
   <div class="footer-note">
+    <button class="btn ghost" id="changepin">Eltern-Code ändern</button>
     <button class="btn ghost" id="resetbtn">Fortschritt zurücksetzen</button>
   </div>
   <button class="btn" id="elternback">Zurück</button>
@@ -567,11 +573,11 @@ function daysUntil(s){return Math.round((pdate(s)-pdate(today()))/86400000);}
 function defState(){
   const sk={};SKILLS.forEach(s=>sk[s.id]={box:0,due:today(),seen:0,correct:0});
   const owed={},last={};["mathe","deutsch","hsu"].forEach(s=>{owed[s]=0;last[s]="";});
-  return{sk,owed,last,gen:"",grade:3,probe:null,gaps:[],placed:false,games:true,gameDay:"",apiKey:"",model:"claude-sonnet-4-6",created:today()};
+  return{sk,owed,last,gen:"",grade:3,probe:null,gaps:[],placed:false,games:true,gameDay:"",apiKey:"",model:"claude-sonnet-4-6",pin:"",created:today()};
 }
 function load(){try{const r=localStorage.getItem(KEY);if(!r)return defState();const s=JSON.parse(r);
   SKILLS.forEach(k=>{if(!s.sk[k.id])s.sk[k.id]={box:0,due:today(),seen:0,correct:0};});
-  if(s.grade==null)s.grade=3;if(!s.gaps)s.gaps=[];if(s.placed==null)s.placed=false;if(s.games==null)s.games=true;if(s.gameDay==null)s.gameDay="";if(s.apiKey==null)s.apiKey="";if(!s.model)s.model="claude-sonnet-4-6";return s;}catch(e){return defState();}}
+  if(s.grade==null)s.grade=3;if(!s.gaps)s.gaps=[];if(s.placed==null)s.placed=false;if(s.games==null)s.games=true;if(s.gameDay==null)s.gameDay="";if(s.apiKey==null)s.apiKey="";if(!s.model)s.model="claude-sonnet-4-6";if(s.pin==null)s.pin="";return s;}catch(e){return defState();}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e){}}
 
 function rollover(){
@@ -771,7 +777,11 @@ function endSession(){
 $("#backhome").onclick=()=>{show("home");renderHome();};
 
 /* ---------- Eltern-Bereich ---------- */
-$("#elternbtn").onclick=()=>{renderEltern();show("eltern");};
+$("#elternbtn").onclick=()=>{
+  if(!STATE.pin){const p=prompt("Eltern-Bereich schützen.\nLege einen Code fest (z. B. 4 Ziffern), den nur du kennst:");if(p==null)return;const v=String(p).trim();if(v.length<3){alert("Bitte mindestens 3 Zeichen.");return;}STATE.pin=v;save();alert("Eltern-Code gesetzt. Merke ihn dir gut.");}
+  else{const e=prompt("Eltern-Code eingeben:");if(e==null)return;if(String(e).trim()!==STATE.pin){alert("Falscher Code.");return;}}
+  renderEltern();show("eltern");
+};
 $("#elternback").onclick=()=>{show("home");renderHome();};
 function renderLernstand(){
   const box=$("#lernstand");if(!box)return;
@@ -794,6 +804,8 @@ function renderEltern(){
   const ak=$("#apiKey");if(ak)ak.value=STATE.apiKey||"";const ms=$("#modelSel");if(ms)ms.value=STATE.model||"claude-sonnet-4-6";
   const sk=$("#saveKeyBtn");if(sk)sk.onclick=()=>{STATE.apiKey=($("#apiKey").value||"").trim();STATE.model=$("#modelSel").value;save();testApi();};
   const scb=$("#scanBtn");if(scb)scb.onclick=()=>gradeScan();
+  const sf=$("#scanFiles");if(sf)sf.onchange=()=>readScanFiles();
+  const cp=$("#changepin");if(cp)cp.onclick=()=>{const p=prompt("Neuen Eltern-Code festlegen:");if(p==null)return;const v=String(p).trim();if(v.length<3){alert("Bitte mindestens 3 Zeichen.");return;}STATE.pin=v;save();alert("Eltern-Code geändert.");};
   // Probe-Formular
   const ps=$("#probesub");ps.value=STATE.probe?STATE.probe.sub:"";
   $("#probedate").value=STATE.probe?STATE.probe.date:"";
@@ -847,30 +859,63 @@ function endGame(){stopGame();STATE.gameDay=today();save();const a=$("#gamearea"
 $("#gamequit").onclick=()=>{stopGame();GAME=null;show("home");renderHome();};
 
 /* ---------- KI-Anbindung (optional, eigener Anthropic-Schlüssel) ---------- */
-const GRADE_PROMPT=`Du bist eine erfahrene Grundschullehrkraft in Bayern und korrigierst nach LehrplanPLUS. Auf den Fotos ist eine (eventuell schon von der Lehrkraft korrigierte) Schulaufgabe/Probe aus der Grundschule.
+function gradePrompt(){
+  const liste=Object.entries(TOPICS).map(([id,t])=>`${id} = ${t.name} (${SUBJECTS[t.sub].name})`).join("; ");
+  return `Du bist eine sehr sorgfältige, erfahrene Grundschullehrkraft in Bayern und korrigierst streng nach LehrplanPLUS und den ISB-Bewertungsgrundsätzen. Die Bilder bzw. das PDF zeigen EINE zusammenhängende Schulaufgabe (Probe), evtl. schon von der Lehrkraft korrigiert. Es können mehrere Seiten sein – behandle sie als EIN Dokument und beziehe zusammenhängende Texte über Seiten hinweg aufeinander.
 
-Aufgaben:
-1. Das Dokument kann mehrere Seiten oder Bilder umfassen – werte ausnahmslos ALLE Seiten/Bilder aus, nicht nur die erste. Lies alle Aufgabenstellungen und die Antworten des Kindes.
-2. Korrigiere jede Aufgabe sachlich korrekt nach dem offiziellen Bewertungsschema. Bei einem Hörtext: Der Hörtext ist nicht im Bild – weise kurz darauf hin und bewerte, was sichtbar ist.
-3. Wenn eine Punkteverteilung erkennbar ist, vergib Punkte und berechne die Gesamtnote nach dem bayerischen Grundschul-Notenschlüssel: Note 1 ab 96 %, 2 ab 80 %, 3 ab 60 %, 4 ab 45 %, 5 ab 16 %, sonst 6.
-4. Wenn eine Note oder Punktzahl der Lehrkraft sichtbar ist, vergleiche und sage, ob sie passt, zu mild oder zu streng ist.
-5. Antworte auf Deutsch und übersichtlich: zuerst eine kurze Aufgaben-Übersicht (Nummer: richtig/falsch + knappe Begründung), dann eine Zeile "Gesamt: X von Y Punkten = Z % → Note N", dann ein Satz zum Vergleich mit der Lehrkraft-Note. Sei gründlich, fair und freundlich im Ton.`;
-async function aiCall(messages,maxTokens){
-  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":STATE.apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true","content-type":"application/json"},body:JSON.stringify({model:STATE.model||"claude-sonnet-4-6",max_tokens:maxTokens||1800,messages})});
+Arbeite gründlich in diesen Schritten:
+1. Verschaffe dir zuerst einen Überblick über ALLE Seiten und Aufgaben; nenne die erkannte Seitenzahl.
+2. Bestimme für JEDE Aufgabe zuerst selbst die fachlich richtige Lösung (rechne Rechnungen nach, prüfe Geometrie/Körper genau, prüfe Rechtschreibung/Grammatik). Erst danach vergleiche mit der Antwort des Kindes. Lies die Handschrift sorgfältig.
+   Bewusst auf typische Stolperfallen achten: Kegel rollt im Bogen, Kugel rollt geradeaus; Zylinder hat zwei Kreisflächen, Kegel eine; „12 rechte Winkel" passen auf Würfel UND Quader (beide richtig); Baumdiagramm-Möglichkeiten werden multipliziert (z. B. 2·3·2 = 12). Bei einem Hörtext oder Bezug auf eine externe Geschichte/Quelle, die nicht vollständig im Bild ist: NUTZE DIE WEBSUCHE, um die Transkription des Hörtexts bzw. eine offizielle Musterlösung zu finden, und bewerte die offenen Antworten damit. Findest du nichts Verlässliches, weise ausdrücklich darauf hin und bewerte vorsichtig nur das Sichtbare. Auch bei unsicheren Fakten darfst du zur Absicherung die Websuche verwenden.
+3. Vergib pro Aufgabe Punkte gemäß der sichtbaren Punkteverteilung und begründe kurz (richtig/teilweise/falsch). Weder zu mild noch zu streng – orientiere dich an den ISB-Anforderungsbereichen.
+4. Summiere die Punkte, rechne Prozent und Note nach dem bayerischen Grundschul-Notenschlüssel: Note 1 ab 96 %, 2 ab 80 %, 3 ab 60 %, 4 ab 45 %, 5 ab 16 %, sonst 6.
+5. Falls Punkte/Note der Lehrkraft sichtbar sind: vergleiche sorgfältig, sage ob fair, zu mild oder zu streng, und benenne ausdrücklich jeden strittigen Punkt (z. B. eine zu Unrecht als falsch markierte richtige Antwort).
+
+Gib dann auf Deutsch und übersichtlich aus:
+- Pro Aufgabe: „Nr.: erreichte/maximale Punkte – kurze Begründung"
+- „Gesamt: X von Y Punkten = Z % → Note N"
+- ein bis zwei Sätze Vergleich mit der Lehrkraft-Note inkl. strittiger Punkte
+- Abschnitt „Übungsschwerpunkte:" mit den Themen, die das Kind üben sollte.
+
+Ganz zuletzt gib GENAU EINE maschinenlesbare Zeile aus, die mit „SCHWERPUNKTE:" beginnt, gefolgt von den IDs der zu übenden Bereiche – ausschließlich aus dieser Liste, mehrere mit Komma getrennt, oder „-" wenn keine: ${liste}`;
+}
+async function aiCall(messages,maxTokens,tools){
+  const body={model:STATE.model||"claude-sonnet-4-6",max_tokens:maxTokens||1800,messages};
+  if(tools)body.tools=tools;
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":STATE.apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true","content-type":"application/json"},body:JSON.stringify(body)});
   if(!r.ok){let t="";try{t=await r.text();}catch(e){}throw new Error("API "+r.status+" – "+t.slice(0,240));}
-  const d=await r.json();return (d.content&&d.content[0]&&d.content[0].text)||"(keine Antwort)";
+  const d=await r.json();const txt=(d.content||[]).filter(b=>b&&b.type==="text").map(b=>b.text).join("\n").trim();return txt||"(keine Antwort)";
 }
 function fileToData(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>rej(new Error("Datei konnte nicht gelesen werden"));fr.readAsDataURL(file);});}
 async function testApi(){const st=$("#apiStatus");if(!st)return;if(!STATE.apiKey){st.style.color="var(--bad)";st.textContent="Bitte zuerst einen Schlüssel eintragen.";return;}st.style.color="var(--muted)";st.textContent="Teste Verbindung …";
   try{const t=await aiCall([{role:"user",content:[{type:"text",text:"Antworte nur mit dem Wort: OK"}]}],20);st.style.color="var(--good)";st.textContent="✅ Verbindung funktioniert ("+t.trim()+").";}
   catch(e){st.style.color="var(--bad)";st.textContent="❌ "+e.message;}}
-async function gradeScan(){const st=$("#scanResult");if(!st)return;const files=($("#scanFiles")||{}).files;
+let SCANPAGES=[],SCANRAW=[];
+function pdfWorker(){if(window.pdfjsLib&&!pdfjsLib.GlobalWorkerOptions.workerSrc)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";}
+async function pdfToImages(file){pdfWorker();const buf=await file.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:buf}).promise;const out=[];for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i);const vp=pg.getViewport({scale:2});const c=document.createElement("canvas");c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext("2d"),viewport:vp}).promise;out.push(c.toDataURL("image/jpeg",0.85));}return out;}
+async function readScanFiles(){const info=$("#scanInfo"),prev=$("#scanPreview");SCANPAGES=[];SCANRAW=[];const files=($("#scanFiles")||{}).files;
+  if(!files||!files.length){if(info)info.textContent="";if(prev)prev.innerHTML="";return;}
+  if(info){info.style.color="var(--muted)";info.textContent="Lese Datei …";}if(prev)prev.innerHTML="";
+  try{for(const f of files){const raw=await fileToData(f);SCANRAW.push(raw);
+      if(f.type==="application/pdf"||/\.pdf$/i.test(f.name)){if(window.pdfjsLib){const imgs=await pdfToImages(f);SCANPAGES.push(...imgs);}else{SCANPAGES.push(raw);}}else{SCANPAGES.push(raw);}}
+    if(prev)prev.innerHTML=SCANPAGES.map((d,i)=>String(d).startsWith("data:image")?`<span style="display:inline-block;text-align:center;margin:4px"><img src="${d}" style="height:96px;border:1px solid #e0c987;border-radius:6px"><span style="display:block;font-size:.7rem;color:var(--muted)">Seite ${i+1}</span></span>`:`<span style="display:inline-block;margin:4px;font-size:.8rem">📄 Seite ${i+1}</span>`).join("");
+    if(info){info.style.color=SCANPAGES.length>1?"var(--good)":"var(--bad)";info.textContent=SCANPAGES.length+" Seite(n) erkannt – bitte prüfen, ob wirklich ALLE Seiten der Probe dabei sind.";}
+  }catch(e){if(info){info.style.color="var(--bad)";info.textContent="Konnte Datei nicht lesen: "+e.message;}}
+}
+function applyGapsFromScan(ids){const set=new Set(STATE.gaps||[]);ids.forEach(i=>{if(TOPICS[i])set.add(i);});STATE.gaps=[...set];STATE.gaps.forEach(t=>skillsOfTopic(t).forEach(s=>{STATE.sk[s.id].box=Math.min(STATE.sk[s.id].box,1);STATE.sk[s.id].due=today();}));save();}
+async function gradeScan(){const st=$("#scanResult"),ap=$("#scanApply");if(!st)return;if(ap)ap.innerHTML="";
   if(!STATE.apiKey){st.style.color="var(--bad)";st.textContent="Bitte zuerst oben einen API-Schlüssel eintragen und testen.";return;}
-  if(!files||!files.length){st.style.color="var(--bad)";st.textContent="Bitte zuerst Foto(s) der Probe auswählen.";return;}
-  st.style.color="var(--muted)";st.textContent="Werte die Probe aus … (das kann einen Moment dauern)";
-  try{const content=[{type:"text",text:GRADE_PROMPT}];
-    for(const f of files){const data=await fileToData(f);const m=String(data).match(/^data:([^;]+);base64,(.*)$/);if(!m)continue;if(m[1]==="application/pdf")content.push({type:"document",source:{type:"base64",media_type:"application/pdf",data:m[2]}});else content.push({type:"image",source:{type:"base64",media_type:m[1],data:m[2]}});}
-    const out=await aiCall([{role:"user",content}],2200);st.style.color="var(--ink)";st.textContent=out;}
+  if(!SCANRAW.length){st.style.color="var(--bad)";st.textContent="Bitte zuerst Foto(s) oder PDF der Probe auswählen.";return;}
+  st.style.color="var(--muted)";st.textContent="Werte "+SCANPAGES.length+" Seite(n) gründlich aus … (das kann einen Moment dauern)";
+  try{const content=[{type:"text",text:gradePrompt()}];
+    SCANRAW.forEach(d=>{const m=String(d).match(/^data:([^;]+);base64,(.*)$/);if(!m)return;if(m[1]==="application/pdf")content.push({type:"document",source:{type:"base64",media_type:"application/pdf",data:m[2]}});else content.push({type:"image",source:{type:"base64",media_type:m[1],data:m[2]}});});
+    const out=await aiCall([{role:"user",content}],3500,[{type:"web_search_20250305",name:"web_search",max_uses:5}]);
+    const mm=out.match(/SCHWERPUNKTE:\s*([^\n]*)/i);
+    const ids=mm?mm[1].split(/[,\s]+/).map(x=>x.trim()).filter(x=>TOPICS[x]):[];
+    const human=out.replace(/\n?SCHWERPUNKTE:[^\n]*/i,"").trim();
+    st.style.color="var(--ink)";st.textContent=human;
+    if(ap){if(ids.length){applyGapsFromScan(ids);ap.innerHTML='<span style="color:var(--good);font-weight:700">✓ Übungsschwerpunkte automatisch ins Üben übernommen: '+ids.map(i=>TOPICS[i].name).join(", ")+'. Sephi übt diese Themen ab jetzt verstärkt.</span>';}else ap.innerHTML="";}
+  }
   catch(e){st.style.color="var(--bad)";st.textContent="Fehler: "+e.message;}}
 
 /* ---------- PWA-Manifest ---------- */
