@@ -873,11 +873,13 @@ Arbeite gründlich in diesen Schritten:
 
 Gib dann auf Deutsch und übersichtlich aus:
 - Pro Aufgabe: „Nr.: erreichte/maximale Punkte – kurze Begründung"
-- „Gesamt: X von Y Punkten = Z % → Note N"
-- ein bis zwei Sätze Vergleich mit der Lehrkraft-Note inkl. strittiger Punkte
+- ein bis zwei Sätze zum Vergleich mit der Lehrkraft-Note inkl. strittiger Punkte
 - Abschnitt „Übungsschwerpunkte:" mit den Themen, die das Kind üben sollte.
 
-Ganz zuletzt gib GENAU EINE maschinenlesbare Zeile aus, die mit „SCHWERPUNKTE:" beginnt, gefolgt von den IDs der zu übenden Bereiche – ausschließlich aus dieser Liste, mehrere mit Komma getrennt, oder „-" wenn keine: ${liste}`;
+WICHTIG: Prozentzahl und Endnote berechnet die App selbst aus deinen Punkten. Schreibe deshalb KEINE eigene Prozent- oder Notenrechnung in den Fließtext (das ist fehleranfällig). Gib stattdessen ganz am Ende GENAU diese drei maschinenlesbaren Zeilen aus (jeweils eigene Zeile):
+PUNKTE: <erreichte Gesamtpunkte>/<maximale Gesamtpunkte>   (nur Zahlen, Komma erlaubt, z. B. 16,5/23)
+LEHRERNOTE: <von der Lehrkraft vergebene Note 1 bis 6, oder ->
+SCHWERPUNKTE: <IDs der zu übenden Bereiche, ausschließlich aus dieser Liste, mehrere mit Komma, oder ->: ${liste}`;
 }
 async function aiCall(messages,maxTokens,tools){
   const body={model:STATE.model||"claude-sonnet-4-6",max_tokens:maxTokens||1800,messages};
@@ -912,8 +914,16 @@ async function gradeScan(){const st=$("#scanResult"),ap=$("#scanApply");if(!st)r
     const out=await aiCall([{role:"user",content}],3500,[{type:"web_search_20250305",name:"web_search",max_uses:5}]);
     const mm=out.match(/SCHWERPUNKTE:\s*([^\n]*)/i);
     const ids=mm?mm[1].split(/[,\s]+/).map(x=>x.trim()).filter(x=>TOPICS[x]):[];
-    const human=out.replace(/\n?SCHWERPUNKTE:[^\n]*/i,"").trim();
-    st.style.color="var(--ink)";st.textContent=human;
+    const pm=out.match(/PUNKTE:\s*([\d.,]+)\s*\/\s*([\d.,]+)/i);
+    const lm=out.match(/LEHRERNOTE:\s*([1-6])/i);
+    let header="";
+    if(pm){const er=parseFloat(pm[1].replace(",",".")),mx=parseFloat(pm[2].replace(",","."));
+      if(mx>0){const pct=Math.round(er/mx*1000)/10,note=noteFromPct(pct);
+        header="📊 Berechnung der App: "+pm[1]+" von "+pm[2]+" Punkten = "+pct+" % → Note "+note;
+        if(lm){const tn=parseInt(lm[1],10);header+=(tn===note?"  ·  Die Lehrkraft-Note "+tn+" passt.":(tn<note?"  ·  Die Lehrkraft hat mit "+tn+" milder bewertet.":"  ·  Die Lehrkraft hat mit "+tn+" strenger bewertet."));}
+        header+="\n\n";}}
+    const human=out.replace(/\n?PUNKTE:[^\n]*/i,"").replace(/\n?LEHRERNOTE:[^\n]*/i,"").replace(/\n?SCHWERPUNKTE:[^\n]*/i,"").trim();
+    st.style.color="var(--ink)";st.textContent=header+human;
     if(ap){if(ids.length){applyGapsFromScan(ids);ap.innerHTML='<span style="color:var(--good);font-weight:700">✓ Übungsschwerpunkte automatisch ins Üben übernommen: '+ids.map(i=>TOPICS[i].name).join(", ")+'. Sephi übt diese Themen ab jetzt verstärkt.</span>';}else ap.innerHTML="";}
   }
   catch(e){st.style.color="var(--bad)";st.textContent="Fehler: "+e.message;}}
